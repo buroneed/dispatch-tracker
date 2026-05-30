@@ -43,6 +43,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .filter-bar select:focus, .filter-bar input[type=text]:focus { border-color: #185FA5; }
 .filter-bar input[type=text] { flex: 1; min-width: 180px; }
 .filter-sep { width: 1px; height: 20px; background: #e8e8e8; margin: 0 2px; }
+.sdr { position:relative; display:inline-block; }
+.sdr-trigger { height:32px; min-width:130px; border:1px solid #d8d8d8; border-radius:7px; padding:0 28px 0 10px; font-size:12px; color:#1a1a1a; background:#fff; cursor:pointer; display:flex; align-items:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; user-select:none; transition:border-color 0.12s; }
+.sdr-trigger:after { content:'▾'; position:absolute; right:9px; top:50%; transform:translateY(-50%); font-size:10px; color:#999; pointer-events:none; transition:transform 0.15s; }
+.sdr.open .sdr-trigger { border-color:#185FA5; }
+.sdr.open .sdr-trigger:after { transform:translateY(-50%) rotate(180deg); }
+.sdr-trigger.has-value { color:#185FA5; font-weight:600; border-color:#185FA5; background:#EFF6FF; }
+.sdr-dropdown { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:200px; max-width:320px; background:#fff; border:1px solid #d8d8d8; border-radius:9px; box-shadow:0 6px 20px rgba(0,0,0,0.12); z-index:500; overflow:hidden; }
+.sdr.open .sdr-dropdown { display:block; }
+.sdr-search { padding:8px 10px; border-bottom:1px solid #f0f0f0; }
+.sdr-search input { width:100%; height:28px; border:1px solid #d8d8d8; border-radius:6px; padding:0 8px; font-size:12px; outline:none; }
+.sdr-search input:focus { border-color:#185FA5; }
+.sdr-list { max-height:200px; overflow-y:auto; padding:4px 0; }
+.sdr-opt { padding:7px 14px; font-size:12px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sdr-opt:hover { background:#f0f4ff; color:#185FA5; }
+.sdr-opt.selected { background:#EFF6FF; color:#185FA5; font-weight:600; }
+.sdr-opt.hidden { display:none; }
+.sdr-empty { padding:10px 14px; font-size:12px; color:#aaa; text-align:center; }
+.sdr-wide .sdr-trigger { min-width:180px; }
 .cust-bar { margin: 8px 20px 0; background: #E6F1FB; border: 1px solid #B5D4F4; border-radius: 10px; padding: 10px 16px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
 .cust-bar.on { display: flex; }
 .cust-bar label { font-size: 12px; font-weight: 600; color: #185FA5; white-space: nowrap; }
@@ -264,24 +282,32 @@ tbody tr.sel td { background: #EFF6FF; }
 </div>
 
 <!-- Filter Bar -->
+<!-- Hidden selects for filter logic -->
+<select id="f-billing" style="display:none" onchange="applyFilters()"><option value="">All Billing Names</option></select>
+<select id="f-state"   style="display:none" onchange="applyFilters()"><option value="">All States</option></select>
+<select id="f-city"    style="display:none" onchange="applyFilters()"><option value="">All Cities</option></select>
+<select id="f-month"   style="display:none" onchange="applyFilters()"><option value="">Service Month</option></select>
+<select id="f-cat"     style="display:none" onchange="applyFilters()"><option value="">All Categories</option></select>
+<select id="f-status"  style="display:none" onchange="document.querySelectorAll('.kpi-clickable').forEach(e=>e.classList.remove('active'));applyFilters()">
+  <option value="">All Statuses</option>
+  <option value="DELIVERED">Delivered</option>
+  <option value="IN TRANSIT">In Transit</option>
+  <option value="DELAYED">Delayed</option>
+  <option value="RETURN">Returned</option>
+  <option value="PENDING">Pending for Dispatch</option>
+  <option value="CANCELLED">Cancelled</option>
+  <option value="BLANK">Blank / No Status</option>
+</select>
+<select id="f-subject" style="display:none" onchange="applyFilters()"><option value="">All Mail Subjects</option></select>
 <div class="filter-bar">
-  <select id="f-billing" onchange="applyFilters()"><option value="">All Billing Names</option></select>
-  <select id="f-state" onchange="applyFilters()"><option value="">All States</option></select>
-  <select id="f-city" onchange="applyFilters()"><option value="">All Cities</option></select>
-  <select id="f-month" onchange="applyFilters()"><option value="">Service Month</option></select>
-  <select id="f-cat" onchange="applyFilters()"><option value="">All Categories</option></select>
-  <select id="f-status" onchange="document.querySelectorAll('.kpi-clickable').forEach(e=>e.classList.remove('active'));applyFilters()">
-    <option value="">All Statuses</option>
-    <option value="DELIVERED">Delivered</option>
-    <option value="IN TRANSIT">In Transit</option>
-    <option value="DELAYED">Delayed</option>
-    <option value="RETURN">Returned</option>
-    <option value="PENDING">Pending for Dispatch</option>
-    <option value="CANCELLED">Cancelled</option>
-    <option value="BLANK">Blank / No Status</option>
-  </select>
+  <div class="sdr" id="sdr-billing" data-target="f-billing" data-placeholder="All Billing Names"></div>
+  <div class="sdr" id="sdr-state"   data-target="f-state"   data-placeholder="All States"></div>
+  <div class="sdr" id="sdr-city"    data-target="f-city"    data-placeholder="All Cities"></div>
+  <div class="sdr" id="sdr-month"   data-target="f-month"   data-placeholder="Service Month"></div>
+  <div class="sdr" id="sdr-cat"     data-target="f-cat"     data-placeholder="All Categories"></div>
+  <div class="sdr" id="sdr-status"  data-target="f-status"  data-placeholder="All Statuses"></div>
   <div class="filter-sep"></div>
-  <select id="f-subject" onchange="applyFilters()"><option value="">All Mail Subjects</option></select>
+  <div class="sdr sdr-wide" id="sdr-subject" data-target="f-subject" data-placeholder="All Mail Subjects"></div>
   <input type="text" id="f-search" placeholder="Search challan, store, outlet ID, docket no&hellip;" oninput="applyFilters()" />
   <button class="btn" onclick="resetFilters()">Clear</button>
   <button class="btn btn-green" onclick="downloadCSV()">&#8659; Download Excel</button>
@@ -507,7 +533,7 @@ async function loadData() {
 function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort(); }
 
 function populateFilters() {
-  const fill = (id, vals) => { const el=document.getElementById(id); const f=el.options[0].outerHTML; el.innerHTML=f+vals.map(v=>`<option value="${v}">${v}</option>`).join(''); };
+  const fill = (id, vals) => { const el=document.getElementById(id); const f=el.options[0].outerHTML; el.innerHTML=f+vals.map(v=>`<option value="${v}">${v}</option>`).join(''); refreshSDR(id); };
   fill('f-billing', uniq(allData.map(r => r[C.billing])));
   fill('f-subject', uniq(allData.map(r => r[C.subject])));
   fill('f-state',   uniq(allData.map(r => r[C.state])));
@@ -546,6 +572,7 @@ function filterByKPI(statusVal) {
   if (statusVal !== '') {
     event.currentTarget.classList.add('active');
   }
+  refreshSDR('f-status');
   applyFilters();
 }
 
@@ -582,6 +609,7 @@ function applyFilters() {
 
 function resetFilters() {
   ['f-billing','f-state','f-city','f-month','f-cat','f-status','f-subject'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  resetAllSDR();
   document.getElementById('f-search').value = ''; document.getElementById('cust-val').value = '';
   applyFilters();
 }
@@ -917,6 +945,99 @@ function downloadCSV() {
 
 let _resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer=setTimeout(()=>{ if(filteredData.length) renderTable(filteredData); },150); });
+
+// ── Searchable Dropdowns ──────────────────────────────────────────────────────
+function initSDR(sdrEl) {
+  const targetId = sdrEl.dataset.target;
+  const placeholder = sdrEl.dataset.placeholder || 'Select…';
+  const sel = document.getElementById(targetId);
+  sdrEl.innerHTML = `
+    <div class="sdr-trigger" tabindex="0">${placeholder}</div>
+    <div class="sdr-dropdown">
+      <div class="sdr-search"><input type="text" placeholder="Search…" /></div>
+      <div class="sdr-list"></div>
+    </div>`;
+  const trigger = sdrEl.querySelector('.sdr-trigger');
+  const dropdown = sdrEl.querySelector('.sdr-dropdown');
+  const searchInput = sdrEl.querySelector('.sdr-search input');
+  const list = sdrEl.querySelector('.sdr-list');
+
+  function buildList() {
+    list.innerHTML = '';
+    const opts = Array.from(sel.options);
+    if (!opts.length) return;
+    const q = (searchInput.value || '').toLowerCase();
+    let anyVisible = false;
+    opts.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'sdr-opt' + (o.value === sel.value ? ' selected' : '');
+      div.textContent = o.text;
+      div.dataset.value = o.value;
+      if (q && !o.text.toLowerCase().includes(q)) { div.classList.add('hidden'); } else { anyVisible = true; }
+      div.addEventListener('click', e => {
+        e.stopPropagation();
+        sel.value = o.value;
+        sel.dispatchEvent(new Event('change'));
+        updateTrigger();
+        closeSDR(sdrEl);
+      });
+      list.appendChild(div);
+    });
+    if (!anyVisible) {
+      const empty = document.createElement('div');
+      empty.className = 'sdr-empty'; empty.textContent = 'No matches found';
+      list.appendChild(empty);
+    }
+  }
+
+  function updateTrigger() {
+    const selOpt = sel.options[sel.selectedIndex];
+    const hasVal = sel.value !== '';
+    trigger.textContent = hasVal ? selOpt.text : placeholder;
+    trigger.classList.toggle('has-value', hasVal);
+  }
+
+  trigger.addEventListener('click', e => { e.stopPropagation(); toggleSDR(sdrEl); });
+  trigger.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') toggleSDR(sdrEl); });
+  searchInput.addEventListener('input', () => buildList());
+  searchInput.addEventListener('click', e => e.stopPropagation());
+  sdrEl._buildList = buildList;
+  sdrEl._updateTrigger = updateTrigger;
+  sdrEl._reset = () => { sel.value=''; updateTrigger(); };
+}
+
+function toggleSDR(sdrEl) {
+  const isOpen = sdrEl.classList.contains('open');
+  closeAllSDR();
+  if (!isOpen) openSDR(sdrEl);
+}
+function openSDR(sdrEl) {
+  sdrEl.classList.add('open');
+  sdrEl._buildList();
+  setTimeout(() => sdrEl.querySelector('.sdr-search input').focus(), 50);
+}
+function closeSDR(sdrEl) {
+  sdrEl.classList.remove('open');
+  sdrEl.querySelector('.sdr-search input').value = '';
+}
+function closeAllSDR() {
+  document.querySelectorAll('.sdr.open').forEach(closeSDR);
+}
+document.addEventListener('click', closeAllSDR);
+
+function refreshSDR(targetId) {
+  const sdrEl = document.querySelector(`.sdr[data-target="${targetId}"]`);
+  if (!sdrEl || !sdrEl._buildList) return;
+  sdrEl._buildList();
+  sdrEl._updateTrigger();
+}
+
+function resetAllSDR() {
+  document.querySelectorAll('.sdr').forEach(el => { if(el._reset) el._reset(); });
+}
+
+document.querySelectorAll('.sdr').forEach(initSDR);
+
 if (checkLogin()) { loadData(); }
 </script>
 </body>
