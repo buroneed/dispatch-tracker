@@ -783,9 +783,9 @@ function renderTable(data) {
     <th style="${s}" onclick="toggleSort('status')">Status${arrow('status','text')}</th>
     <th style="${s}" onclick="toggleSort('deliv')">Delivery Date${arrow('deliv','date')}</th>
     <th style="${s}" onclick="toggleSort('parcelQty')">Parcel Qty${arrow('parcelQty','num')}</th>
+    <th>Docs &amp; WhatsApp</th>
     <th style="${s}" onclick="toggleSort('weight')">Weight (kg)${arrow('weight','num')}</th>
     <th style="${s}" onclick="toggleSort('remarks')">Remarks${arrow('remarks','text')}</th>
-    <th>Docs &amp; WhatsApp</th>
   </tr></thead><tbody>`;
   data.forEach((r, idx) => {
     const [bc,bl]=statusBadge(r[C.status]), hasCh=isLink(r[C.challanLk]), hasPOD=isLink(r[C.podLink]);
@@ -818,9 +818,9 @@ function renderTable(data) {
       <td><span class="bdg ${bc}">${bl}</span></td>
       <td>${r[C.delivDate]||'—'}</td>
       <td style="text-align:center;">${r[C.parcelQty]||'—'}</td>
+      <td style="white-space:nowrap;">${docs}</td>
       <td style="text-align:center;">${r[C.weight]||'—'}</td>
       <td style="font-size:11px;color:#666;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r[C.remarks]||''}">${r[C.remarks]||'—'}</td>
-      <td style="white-space:nowrap;">${docs}</td>
     </tr>`;
   });
   html += '</tbody></table>'; document.getElementById('tbl-scroll').innerHTML = html;
