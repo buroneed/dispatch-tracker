@@ -25,13 +25,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-blue:hover { background: #0C447C; }
 .btn-green { background: #2d7d32; color: #fff; border-color: #2d7d32; }
 .btn-green:hover { background: #1b5e20; }
-.kpi-wrap { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; padding: 16px 20px 0; }
+.kpi-wrap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; padding: 16px 20px 0; }
 .kpi { background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 12px 14px; }
 .kpi-lbl { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
 .kpi-val { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: -0.5px; }
 .kpi-meta { font-size: 11px; color: #aaa; margin-top: 5px; }
 .c-blue { color: #185FA5; } .c-green { color: #2d7d32; } .c-indigo { color: #3949AB; }
 .c-gray { color: #757575; } .c-orange { color: #E65100; } .c-red { color: #C62828; }
+.chart-card { background:#fff; border:1px solid #e8e8e8; border-radius:10px; padding:12px 14px; }
+.chart-title { font-size:10px; font-weight:600; color:#777; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; }
+.chart-card canvas { height:160px !important; }
 .filter-bar { margin: 12px 20px 0; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .filter-bar select, .filter-bar input[type=text] { height: 32px; border: 1px solid #d8d8d8; border-radius: 7px; padding: 0 10px; font-size: 12px; color: #1a1a1a; background: #fff; outline: none; transition: border-color 0.12s; }
 .filter-bar select:focus, .filter-bar input[type=text]:focus { border-color: #185FA5; }
@@ -143,7 +146,8 @@ tbody tr.sel td { background: #EFF6FF; }
   .hdr-right { width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
   .view-toggle .vbtn { padding: 5px 9px; font-size: 11px; }
   .btn { height: 30px; padding: 0 11px; font-size: 11px; }
-  .kpi-wrap { grid-template-columns: repeat(3, 1fr); padding: 10px 14px 0; gap: 7px; }
+  .kpi-wrap { grid-template-columns: repeat(4, 1fr); padding: 10px 14px 0; gap: 7px; }
+  #charts-section { grid-template-columns: 1fr !important; }
   .kpi { padding: 9px 10px; }
   .kpi-val { font-size: 20px; }
   .kpi-meta { display: none; }
@@ -227,18 +231,17 @@ tbody tr.sel td { background: #EFF6FF; }
   <div class="kpi"><div class="kpi-lbl">Pending Dispatch</div><div class="kpi-val c-gray" id="k-pending">—</div><div class="kpi-meta">awaiting pickup</div></div>
   <div class="kpi"><div class="kpi-lbl">Delayed</div><div class="kpi-val c-orange" id="k-delayed">—</div><div class="kpi-meta">needs attention</div></div>
   <div class="kpi"><div class="kpi-lbl">Returned</div><div class="kpi-val c-red" id="k-return">—</div><div class="kpi-meta">returned / cancelled</div></div>
+  <div class="kpi" style="cursor:pointer;" onclick="document.getElementById('f-status').value='BLANK';applyFilters()"><div class="kpi-lbl">Blank / No Status</div><div class="kpi-val" style="color:#bbb;" id="k-blank">—</div><div class="kpi-meta">click to filter</div></div>
 </div>
 
 <!-- Charts Section -->
-<div id="charts-section" style="display:none; padding:14px 20px 0; gap:14px; grid-template-columns:1fr 1fr; align-items:start;">
-  <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:16px;">
-    <div style="font-size:11px;font-weight:600;color:#777;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;">Status Distribution</div>
-    <canvas id="chart-status" height="200"></canvas>
-  </div>
-  <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:16px;">
-    <div style="font-size:11px;font-weight:600;color:#777;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;">Orders by State (Top 8)</div>
-    <canvas id="chart-state" height="200"></canvas>
-  </div>
+<div id="charts-section" style="display:none; padding:12px 20px 0; gap:10px; grid-template-columns:repeat(3,1fr); align-items:start;">
+  <div class="chart-card"><div class="chart-title">Status Distribution</div><canvas id="chart-status"></canvas></div>
+  <div class="chart-card"><div class="chart-title">Orders by Customer</div><canvas id="chart-customer"></canvas></div>
+  <div class="chart-card"><div class="chart-title">Orders by Category</div><canvas id="chart-category"></canvas></div>
+  <div class="chart-card"><div class="chart-title">Top 8 States</div><canvas id="chart-state"></canvas></div>
+  <div class="chart-card"><div class="chart-title">Top 8 Cities</div><canvas id="chart-city"></canvas></div>
+  <div class="chart-card"><div class="chart-title">Dispatch Mode</div><canvas id="chart-dispmode"></canvas></div>
 </div>
 
 <!-- Customer View Bar -->
@@ -384,7 +387,8 @@ function doLogout() {
   document.getElementById('btn-cust').classList.remove('active');
   document.getElementById('cust-bar').classList.remove('on');
   document.getElementById('tbl-scroll').innerHTML = '<div class="empty-msg" style="color:#ccc;padding:60px 0;">Please sign in to view your dispatch data.</div>';
-  ['k-total','k-del','k-transit','k-pending','k-delayed','k-return'].forEach(id => document.getElementById(id).textContent = '—');
+  ['k-total','k-del','k-transit','k-pending','k-delayed','k-return','k-blank'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('charts-section').style.display='none';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
   document.getElementById('login-screen').classList.remove('hidden');
@@ -555,48 +559,81 @@ function resetFilters() {
 
 function updateKPIs(data) {
   const n=data.length,
-        del=data.filter(r=>normStatus(r[C.status])==='DELIVERED').length,
+        del=data.filter(r=>matchStatus(r[C.status],'DELIVERED')).length,
         transit=data.filter(r=>matchStatus(r[C.status],'IN TRANSIT')).length,
-        delayed=data.filter(r=>normStatus(r[C.status])==='DELAYED').length,
-        ret=data.filter(r=>normStatus(r[C.status]).includes('RETURN')||normStatus(r[C.status]).includes('CANCEL')).length,
-        pending=data.filter(r=>normStatus(r[C.status]).includes('PENDING')).length;
-  document.getElementById('k-total').textContent=n; document.getElementById('k-del').textContent=del;
-  document.getElementById('k-transit').textContent=transit; document.getElementById('k-pending').textContent=pending;
-  document.getElementById('k-delayed').textContent=delayed; document.getElementById('k-return').textContent=ret;
+        delayed=data.filter(r=>matchStatus(r[C.status],'DELAYED')).length,
+        ret=data.filter(r=>matchStatus(r[C.status],'RETURN')||matchStatus(r[C.status],'CANCELLED')).length,
+        pending=data.filter(r=>matchStatus(r[C.status],'PENDING')).length,
+        blank=data.filter(r=>matchStatus(r[C.status],'BLANK')).length;
+  document.getElementById('k-total').textContent=n;
+  document.getElementById('k-del').textContent=del;
+  document.getElementById('k-transit').textContent=transit;
+  document.getElementById('k-pending').textContent=pending;
+  document.getElementById('k-delayed').textContent=delayed;
+  document.getElementById('k-return').textContent=ret;
+  document.getElementById('k-blank').textContent=blank;
   document.getElementById('k-total-sub').textContent = view==='admin' ? 'all locations' : 'your locations';
   document.getElementById('k-del-sub').textContent = n ? Math.round(del/n*100)+'% delivery rate' : '—';
   updateCharts(data);
 }
 
-let _chartStatus = null, _chartState = null;
+const _charts = {};
+function mkChart(id, type, labels, values, colors, opts={}) {
+  if (_charts[id]) _charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  const isBar = type==='bar';
+  _charts[id] = new Chart(ctx, { type, data:{
+    labels,
+    datasets:[{data:values, backgroundColor: colors, borderWidth: isBar?0:2, borderRadius: isBar?4:0}]
+  }, options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend: isBar ? {display:false} : {position:'bottom',labels:{font:{size:10},boxWidth:10,padding:6}}},
+    scales: isBar ? {y:{beginAtZero:true,ticks:{precision:0,font:{size:10}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:9}}}} : undefined,
+    cutout: type==='doughnut'?'55%':undefined,
+    ...opts
+  }});
+}
+function topN(data, field, n=8) {
+  const counts={};
+  data.forEach(r=>{ const v=(r[field]||'—').trim()||'—'; counts[v]=(counts[v]||0)+1; });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+const COLORS14 = ['#185FA5','#2d7d32','#E65100','#6a1b9a','#00838f','#c62828','#f57f17','#37474f','#558b2f','#ad1457','#0277bd','#4e342e','#546e7a','#827717'];
 function updateCharts(data) {
   if (!data.length) { document.getElementById('charts-section').style.display='none'; return; }
   document.getElementById('charts-section').style.display='grid';
 
   // Status donut
-  const del=data.filter(r=>normStatus(r[C.status])==='DELIVERED').length,
+  const del=data.filter(r=>matchStatus(r[C.status],'DELIVERED')).length,
         transit=data.filter(r=>matchStatus(r[C.status],'IN TRANSIT')).length,
-        delayed=data.filter(r=>normStatus(r[C.status])==='DELAYED').length,
-        ret=data.filter(r=>normStatus(r[C.status]).includes('RETURN')||normStatus(r[C.status]).includes('CANCEL')).length,
-        pending=data.filter(r=>normStatus(r[C.status]).includes('PENDING')).length,
-        blank=data.filter(r=>!normStatus(r[C.status])).length;
-  const statusCtx = document.getElementById('chart-status').getContext('2d');
-  if (_chartStatus) _chartStatus.destroy();
-  _chartStatus = new Chart(statusCtx, { type:'doughnut', data:{
-    labels:['Delivered','In Transit','Delayed','Returned','Pending','Blank'],
-    datasets:[{data:[del,transit,delayed,ret,pending,blank],backgroundColor:['#4caf50','#0369a1','#ff9800','#e53935','#9e9e9e','#ddd'],borderWidth:2}]
-  }, options:{plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},cutout:'60%',maintainAspectRatio:true}});
+        delayed=data.filter(r=>matchStatus(r[C.status],'DELAYED')).length,
+        ret=data.filter(r=>matchStatus(r[C.status],'RETURN')||matchStatus(r[C.status],'CANCELLED')).length,
+        pending=data.filter(r=>matchStatus(r[C.status],'PENDING')).length,
+        blank=data.filter(r=>matchStatus(r[C.status],'BLANK')).length;
+  mkChart('chart-status','doughnut',
+    ['Delivered','In Transit','Delayed','Returned','Pending','Blank'],
+    [del,transit,delayed,ret,pending,blank],
+    ['#2d7d32','#0369a1','#ff9800','#e53935','#9e9e9e','#ddd']);
 
-  // State bar chart (top 8)
-  const stateCounts = {};
-  data.forEach(r => { const s=r[C.state]||'Unknown'; stateCounts[s]=(stateCounts[s]||0)+1; });
-  const sorted = Object.entries(stateCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const stateCtx = document.getElementById('chart-state').getContext('2d');
-  if (_chartState) _chartState.destroy();
-  _chartState = new Chart(stateCtx, { type:'bar', data:{
-    labels:sorted.map(e=>e[0]),
-    datasets:[{label:'Orders',data:sorted.map(e=>e[1]),backgroundColor:'#185FA5',borderRadius:5}]
-  }, options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}},maintainAspectRatio:true}});
+  // Customer/Billing
+  const cust=topN(data,C.billing);
+  mkChart('chart-customer','bar',cust.map(e=>e[0]),cust.map(e=>e[1]),COLORS14.slice(0,cust.length));
+
+  // Category
+  const cats=topN(data,C.category);
+  mkChart('chart-category','doughnut',cats.map(e=>e[0]),cats.map(e=>e[1]),COLORS14.slice(0,cats.length));
+
+  // State
+  const states=topN(data,C.state);
+  mkChart('chart-state','bar',states.map(e=>e[0]),states.map(e=>e[1]),['#185FA5']);
+
+  // City
+  const cities=topN(data,C.city);
+  mkChart('chart-city','bar',cities.map(e=>e[0]),cities.map(e=>e[1]),['#00838f']);
+
+  // Dispatch Mode
+  const modes=topN(data,C.dispMode,6);
+  mkChart('chart-dispmode','doughnut',modes.map(e=>e[0]),modes.map(e=>e[1]),COLORS14.slice(0,modes.length));
 }
 
 function statusBadge(raw) {
