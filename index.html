@@ -231,7 +231,7 @@ tbody tr.sel td { background: #EFF6FF; }
     </div>
     <div>
       <div class="hdr-title">Dispatch Tracker</div>
-      <div class="hdr-sub">Buroneed Supplies Pvt Ltd &mdash; Live</div>
+      <div class="hdr-sub">Buroneed Supplies Pvt Ltd &mdash; Last refreshed: <span id="last-refresh">—</span></div>
     </div>
   </div>
   <div class="hdr-right">
@@ -523,6 +523,9 @@ async function loadData() {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const text = await resp.text();
     allData = parseCSVSheet(text);
+    const now = new Date();
+    const ts = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+    document.getElementById('last-refresh').textContent = ts;
     if (!allData.length) { document.getElementById('tbl-scroll').innerHTML = '<div class="error-msg">Could not parse data. Make sure the sheet is published as CSV.</div>'; return; }
     populateFilters(); applyFilters();
   } catch(e) {
