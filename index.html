@@ -27,6 +27,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-green:hover { background: #1b5e20; }
 .kpi-wrap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; padding: 16px 20px 0; }
 .kpi { background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 12px 14px; }
+.kpi-clickable { cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.kpi-clickable:hover { border-color: #185FA5; box-shadow: 0 2px 8px rgba(24,95,165,0.12); }
+.kpi-clickable.active { border-color: #185FA5; box-shadow: 0 0 0 2px rgba(24,95,165,0.2); background: #EFF6FF; }
 .kpi-lbl { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
 .kpi-val { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: -0.5px; }
 .kpi-meta { font-size: 11px; color: #aaa; margin-top: 5px; }
@@ -228,13 +231,13 @@ tbody tr.sel td { background: #EFF6FF; }
 
 <!-- KPI Cards -->
 <div class="kpi-wrap">
-  <div class="kpi"><div class="kpi-lbl">Total Orders</div><div class="kpi-val c-blue" id="k-total">—</div><div class="kpi-meta" id="k-total-sub">loading&hellip;</div></div>
-  <div class="kpi"><div class="kpi-lbl">Delivered</div><div class="kpi-val c-green" id="k-del">—</div><div class="kpi-meta" id="k-del-sub">—</div></div>
-  <div class="kpi"><div class="kpi-lbl">In Transit</div><div class="kpi-val c-indigo" id="k-transit">—</div><div class="kpi-meta">active shipments</div></div>
-  <div class="kpi"><div class="kpi-lbl">Pending Dispatch</div><div class="kpi-val c-gray" id="k-pending">—</div><div class="kpi-meta">awaiting pickup</div></div>
-  <div class="kpi"><div class="kpi-lbl">Delayed</div><div class="kpi-val c-orange" id="k-delayed">—</div><div class="kpi-meta">needs attention</div></div>
-  <div class="kpi"><div class="kpi-lbl">Returned</div><div class="kpi-val c-red" id="k-return">—</div><div class="kpi-meta">returned / cancelled</div></div>
-  <div class="kpi" style="cursor:pointer;" onclick="document.getElementById('f-status').value='BLANK';applyFilters()"><div class="kpi-lbl">Blank / No Status</div><div class="kpi-val" style="color:#bbb;" id="k-blank">—</div><div class="kpi-meta">click to filter</div></div>
+  <div class="kpi kpi-clickable" onclick="filterByKPI('')" title="Show all orders"><div class="kpi-lbl">Total Orders</div><div class="kpi-val c-blue" id="k-total">—</div><div class="kpi-meta" id="k-total-sub">loading&hellip;</div></div>
+  <div class="kpi kpi-clickable" onclick="filterByKPI('DELIVERED')" title="Filter: Delivered"><div class="kpi-lbl">Delivered</div><div class="kpi-val c-green" id="k-del">—</div><div class="kpi-meta" id="k-del-sub">—</div></div>
+  <div class="kpi kpi-clickable" onclick="filterByKPI('IN TRANSIT')" title="Filter: In Transit"><div class="kpi-lbl">In Transit</div><div class="kpi-val c-indigo" id="k-transit">—</div><div class="kpi-meta">click to filter</div></div>
+  <div class="kpi kpi-clickable" onclick="filterByKPI('PENDING')" title="Filter: Pending Dispatch"><div class="kpi-lbl">Pending Dispatch</div><div class="kpi-val c-gray" id="k-pending">—</div><div class="kpi-meta">click to filter</div></div>
+  <div class="kpi kpi-clickable" onclick="filterByKPI('DELAYED')" title="Filter: Delayed"><div class="kpi-lbl">Delayed</div><div class="kpi-val c-orange" id="k-delayed">—</div><div class="kpi-meta">click to filter</div></div>
+  <div class="kpi kpi-clickable" onclick="filterByKPI('RETURN')" title="Filter: Returned"><div class="kpi-lbl">Returned</div><div class="kpi-val c-red" id="k-return">—</div><div class="kpi-meta">click to filter</div></div>
+  <div class="kpi kpi-clickable" onclick="filterByKPI('BLANK')" title="Filter: Blank / No Status"><div class="kpi-lbl">Blank / No Status</div><div class="kpi-val" style="color:#bbb;" id="k-blank">—</div><div class="kpi-meta">click to filter</div></div>
 </div>
 
 <!-- Charts Section -->
@@ -267,7 +270,7 @@ tbody tr.sel td { background: #EFF6FF; }
   <select id="f-city" onchange="applyFilters()"><option value="">All Cities</option></select>
   <select id="f-month" onchange="applyFilters()"><option value="">Service Month</option></select>
   <select id="f-cat" onchange="applyFilters()"><option value="">All Categories</option></select>
-  <select id="f-status" onchange="applyFilters()">
+  <select id="f-status" onchange="document.querySelectorAll('.kpi-clickable').forEach(e=>e.classList.remove('active'));applyFilters()">
     <option value="">All Statuses</option>
     <option value="DELIVERED">Delivered</option>
     <option value="IN TRANSIT">In Transit</option>
@@ -278,6 +281,7 @@ tbody tr.sel td { background: #EFF6FF; }
     <option value="BLANK">Blank / No Status</option>
   </select>
   <div class="filter-sep"></div>
+  <select id="f-subject" onchange="applyFilters()"><option value="">All Mail Subjects</option></select>
   <input type="text" id="f-search" placeholder="Search challan, store, outlet ID, docket no&hellip;" oninput="applyFilters()" />
   <button class="btn" onclick="resetFilters()">Clear</button>
   <button class="btn btn-green" onclick="downloadCSV()">&#8659; Download Excel</button>
@@ -505,6 +509,7 @@ function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort(); }
 function populateFilters() {
   const fill = (id, vals) => { const el=document.getElementById(id); const f=el.options[0].outerHTML; el.innerHTML=f+vals.map(v=>`<option value="${v}">${v}</option>`).join(''); };
   fill('f-billing', uniq(allData.map(r => r[C.billing])));
+  fill('f-subject', uniq(allData.map(r => r[C.subject])));
   fill('f-state',   uniq(allData.map(r => r[C.state])));
   fill('f-city',    uniq(allData.map(r => r[C.city])));
   fill('f-month',   uniq(allData.map(r => r[C.month])).reverse());
@@ -528,10 +533,27 @@ function matchStatus(rowStatus, filter) {
   return s.includes(filter);
 }
 
+function filterByKPI(statusVal) {
+  // toggle: if already active, clear it
+  const sel = document.getElementById('f-status');
+  if (sel.value === statusVal && statusVal !== '') {
+    sel.value = '';
+  } else {
+    sel.value = statusVal;
+  }
+  // highlight active card
+  document.querySelectorAll('.kpi-clickable').forEach(el => el.classList.remove('active'));
+  if (statusVal !== '') {
+    event.currentTarget.classList.add('active');
+  }
+  applyFilters();
+}
+
 function applyFilters() {
   const billing=document.getElementById('f-billing').value, state=document.getElementById('f-state').value,
         city=document.getElementById('f-city').value, month=document.getElementById('f-month').value,
         cat=document.getElementById('f-cat').value, status=document.getElementById('f-status').value,
+        subject=document.getElementById('f-subject').value,
         search=document.getElementById('f-search').value.toLowerCase(),
         custField=document.getElementById('cust-field').value,
         custVal=document.getElementById('cust-val').value.trim().toLowerCase();
@@ -546,6 +568,7 @@ function applyFilters() {
     if (city    && r[C.city]    !== city)     return false;
     if (month   && r[C.month]   !== month)    return false;
     if (cat     && r[C.category]!== cat)      return false;
+    if (subject && r[C.subject]  !== subject)   return false;
     if (status  && !matchStatus(r[C.status], status)) return false;
     if (view === 'customer' && custVal) { if (!(r[custField]||'').toLowerCase().includes(custVal)) return false; }
     if (search) {
@@ -558,7 +581,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['f-billing','f-state','f-city','f-month','f-cat','f-status'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  ['f-billing','f-state','f-city','f-month','f-cat','f-status','f-subject'].forEach(id => document.getElementById(id).selectedIndex = 0);
   document.getElementById('f-search').value = ''; document.getElementById('cust-val').value = '';
   applyFilters();
 }
