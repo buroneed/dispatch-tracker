@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Dispatch Tracker — Buroneed Supplies</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6f8; color: #1a1a1a; font-size: 13px; min-height: 100vh; }
+.hdr { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 11px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
+.hdr-logo { display: flex; align-items: center; gap: 10px; }
+.hdr-icon { width: 34px; height: 34px; background: #185FA5; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.hdr-icon svg { fill: #fff; }
+.hdr-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.hdr-sub { font-size: 11px; color: #888; margin-top: 1px; }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+.view-toggle { display: flex; background: #f0f2f5; border-radius: 8px; padding: 3px; gap: 2px; }
+.vbtn { padding: 5px 14px; border-radius: 6px; border: none; background: none; font-size: 12px; font-weight: 500; cursor: pointer; color: #666; transition: all 0.15s; }
+.vbtn.active { background: #fff; color: #185FA5; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.btn { height: 32px; padding: 0 14px; border-radius: 7px; border: 1px solid #d8d8d8; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #444; transition: all 0.12s; white-space: nowrap; }
+.btn:hover { background: #f5f6f8; }
+.btn-blue { background: #185FA5; color: #fff; border-color: #185FA5; }
+.btn-blue:hover { background: #0C447C; }
+.btn-green { background: #2d7d32; color: #fff; border-color: #2d7d32; }
+.btn-green:hover { background: #1b5e20; }
+.kpi-wrap { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; padding: 16px 20px 0; }
+.kpi { background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 12px 14px; }
+.kpi-lbl { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+.kpi-val { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: -0.5px; }
+.kpi-meta { font-size: 11px; color: #aaa; margin-top: 5px; }
+.c-blue { color: #185FA5; } .c-green { color: #2d7d32; } .c-indigo { color: #3949AB; }
+.c-gray { color: #757575; } .c-orange { color: #E65100; } .c-red { color: #C62828; }
+.filter-bar { margin: 12px 20px 0; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filter-bar select, .filter-bar input[type=text] { height: 32px; border: 1px solid #d8d8d8; border-radius: 7px; padding: 0 10px; font-size: 12px; color: #1a1a1a; background: #fff; outline: none; transition: border-color 0.12s; }
+.filter-bar select:focus, .filter-bar input[type=text]:focus { border-color: #185FA5; }
+.filter-bar input[type=text] { flex: 1; min-width: 180px; }
+.filter-sep { width: 1px; height: 20px; background: #e8e8e8; margin: 0 2px; }
+.cust-bar { margin: 8px 20px 0; background: #E6F1FB; border: 1px solid #B5D4F4; border-radius: 10px; padding: 10px 16px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cust-bar.on { display: flex; }
+.cust-bar label { font-size: 12px; font-weight: 600; color: #185FA5; white-space: nowrap; }
+.cust-bar select, .cust-bar input { height: 30px; border: 1px solid #B5D4F4; border-radius: 7px; padding: 0 10px; font-size: 12px; background: #fff; color: #1a1a1a; outline: none; }
+.cust-bar input { width: 220px; }
+.cust-info { font-size: 11px; color: #0C447C; }
+.tbl-wrap { margin: 12px 20px 0; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; overflow: hidden; }
+.tbl-head { padding: 11px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+.tbl-head-left { display: flex; align-items: center; gap: 10px; }
+.tbl-title { font-size: 13px; font-weight: 600; }
+.tbl-cnt { font-size: 12px; color: #999; background: #f5f6f8; padding: 2px 8px; border-radius: 20px; }
+.tbl-scroll { overflow-x: auto; max-height: 440px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+thead th { position: sticky; top: 0; background: #f8f9fa; font-size: 11px; font-weight: 600; color: #777; text-align: left; padding: 8px 12px; border-bottom: 1px solid #e8e8e8; white-space: nowrap; z-index: 10; }
+tbody td { padding: 9px 12px; border-bottom: 1px solid #f2f2f2; font-size: 12px; vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #f8f9fa; cursor: pointer; }
+tbody tr.sel td { background: #EFF6FF; }
+.bdg { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.bdg-delivered { background: #e8f5e9; color: #2d7d32; }
+.bdg-transit { background: #e0f2fe !important; color: #0369a1 !important; border: 1px solid #7dd3fc !important; }
+.bdg-alert { background: #ffebee; color: #C62828; }
+.doc-up { display:inline-flex; align-items:center; gap:3px; background:#e8f5e9; color:#2d7d32; font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; text-decoration:none; margin-right:4px; white-space:nowrap; border:1px solid #c8e6c9; }
+.doc-up:hover { background:#c8e6c9; }
+.doc-pend { display:inline-flex; align-items:center; gap:3px; color:#185FA5; font-size:11px; font-weight:500; margin-right:6px; white-space:nowrap; }
+.det-panel { margin: 0 20px; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; overflow: hidden; display: none; }
+.det-panel.open { display: block; margin-bottom: 0; }
+.det-hdr { background: #042C53; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+.det-hdr-left h3 { font-size: 14px; font-weight: 600; }
+.det-hdr-left p { font-size: 11px; color: #85B7EB; margin-top: 2px; }
+.det-close { background: none; border: none; color: #85B7EB; cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+.det-close:hover { background: rgba(255,255,255,0.1); }
+.det-body { padding: 16px; }
+.det-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 16px; margin-bottom: 14px; }
+.det-field label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 3px; }
+.det-field span { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+.det-addr { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #555; margin-bottom: 12px; line-height: 1.5; }
+.det-addr strong { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+.det-remark { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #92400e; margin-bottom: 12px; }
+.det-remark strong { font-size: 10px; color: #b45309; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 3px; }
+.tl-section { border-top: 1px solid #f0f0f0; padding-top: 14px; }
+.tl-title { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; font-weight: 600; }
+.tl-row { display: flex; align-items: flex-start; }
+.tl-step { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.tl-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #d0d0d0; background: #fff; flex-shrink: 0; }
+.tl-dot.done { background: #2d7d32; border-color: #2d7d32; }
+.tl-dot.active { background: #185FA5; border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.18); }
+.tl-dot.warn { background: #E65100; border-color: #E65100; }
+.tl-dot.ret { background: #AD1457; border-color: #AD1457; }
+.tl-line { flex: 1; height: 2px; background: #e0e0e0; margin: 0; }
+.tl-line.done { background: #2d7d32; }
+.tl-label { margin-top: 7px; text-align: center; font-size: 10px; color: #999; line-height: 1.4; }
+.tl-label b { display: block; font-size: 11px; font-weight: 600; color: #444; margin-bottom: 1px; }
+.tl-label.warn b { color: #E65100; }
+.tl-label.ret b { color: #AD1457; }
+.tl-label.ok b { color: #2d7d32; }
+.doc-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+.loading { text-align: center; padding: 60px 20px; }
+.spinner { width: 38px; height: 38px; border: 3px solid #e8e8e8; border-top-color: #185FA5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { color: #888; font-size: 13px; }
+.empty-msg { text-align: center; padding: 40px; color: #aaa; font-size: 13px; }
+.error-msg { text-align: center; padding: 40px; color: #C62828; font-size: 13px; }
+.footer { text-align: center; padding: 20px; font-size: 11px; color: #bbb; margin-top: 4px; }
+
+/* Login */
+#login-screen { position:fixed; inset:0; background:#f0f4f8; display:flex; align-items:center; justify-content:center; z-index:9999; }
+#login-screen.hidden { display:none; }
+.login-card { background:#fff; border-radius:16px; border:1px solid #e0e0e0; padding:36px 40px; width:100%; max-width:380px; }
+.login-logo { width:52px; height:52px; background:#185FA5; border-radius:14px; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; }
+.login-logo svg { fill:#fff; }
+.login-title { text-align:center; font-size:18px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+.login-sub { text-align:center; font-size:12px; color:#999; margin-bottom:28px; }
+.login-field { margin-bottom:14px; }
+.login-field label { display:block; font-size:11px; font-weight:600; color:#555; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+.login-field input { width:100%; height:42px; border:1.5px solid #d8d8d8; border-radius:9px; padding:0 14px; font-size:13px; color:#1a1a1a; outline:none; transition:border-color 0.15s; }
+.login-field input:focus { border-color:#185FA5; box-shadow:0 0 0 3px rgba(24,95,165,0.1); }
+.login-btn { width:100%; height:42px; background:#185FA5; color:#fff; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; margin-top:8px; transition:background 0.15s; }
+.login-btn:hover { background:#0C447C; }
+.login-error { text-align:center; font-size:12px; color:#C62828; background:#fff0f0; border:1px solid #fecaca; border-radius:7px; padding:9px 14px; margin-top:14px; display:none; }
+.login-error.show { display:block; }
+.login-footer { text-align:center; font-size:11px; color:#bbb; margin-top:22px; }
+.user-badge { display:inline-flex; align-items:center; gap:7px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:20px; padding:5px 13px 5px 9px; font-size:12px; font-weight:600; color:#185FA5; }
+.user-dot { width:8px; height:8px; background:#185FA5; border-radius:50%; flex-shrink:0; }
+
+/* Mobile */
+.card-list { padding: 8px 0 12px; }
+.mob-card { background: #fff; border-bottom: 1px solid #f0f0f0; padding: 14px 16px; cursor: pointer; transition: background 0.1s; }
+.mob-card:first-child { border-top: 1px solid #f0f0f0; }
+.mob-card:active, .mob-card.sel { background: #EFF6FF; }
+.mob-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+.mob-sr { font-size: 11px; color: #aaa; font-weight: 500; }
+.mob-store { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; line-height: 1.3; }
+.mob-meta { font-size: 11px; color: #888; margin-bottom: 2px; }
+.mob-dates { display: flex; gap: 10px; align-items: center; font-size: 11px; color: #555; margin: 8px 0; padding: 8px 0; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; flex-wrap: wrap; }
+.mob-dates span { white-space: nowrap; }
+.mob-track { font-size: 11px; color: #185FA5; margin: 5px 0 2px; font-weight: 500; }
+.mob-contact { font-size: 11px; color: #555; margin: 4px 0; }
+.mob-docs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+@media (max-width: 680px) {
+  .hdr { padding: 10px 14px; flex-wrap: wrap; gap: 6px; }
+  .hdr-sub { display: none; }
+  .hdr-right { width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .view-toggle .vbtn { padding: 5px 9px; font-size: 11px; }
+  .btn { height: 30px; padding: 0 11px; font-size: 11px; }
+  .kpi-wrap { grid-template-columns: repeat(3, 1fr); padding: 10px 14px 0; gap: 7px; }
+  .kpi { padding: 9px 10px; }
+  .kpi-val { font-size: 20px; }
+  .kpi-meta { display: none; }
+  .kpi-lbl { font-size: 9px; }
+  .cust-bar { margin: 8px 14px 0; gap: 8px; }
+  .cust-bar input { width: 100%; }
+  .filter-bar { margin: 10px 14px 0; padding: 10px; gap: 6px; display: grid; grid-template-columns: 1fr 1fr; }
+  .filter-bar select { width: 100%; }
+  .filter-bar input[type=text] { grid-column: 1 / -1; min-width: 0; }
+  .filter-sep { display: none; }
+  .filter-bar .btn { grid-column: 1 / -1; justify-content: center; height: 34px; }
+  .tbl-wrap { margin: 10px 14px 0; border-radius: 10px; }
+  .tbl-scroll { overflow-x: visible; max-height: none; }
+  .det-panel { border-radius: 10px; }
+  .det-grid { grid-template-columns: repeat(2, 1fr); gap: 10px 12px; }
+  .det-body { padding: 12px; }
+  .tl-row { overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
+  .tl-step { min-width: 68px; }
+  .tl-label { font-size: 9px; }
+  .tl-label b { font-size: 10px; }
+  .doc-btns { flex-direction: column; }
+  .doc-btns .btn { width: 100%; justify-content: center; }
+  .footer { padding: 14px; font-size: 10px; }
+  .login-card { padding: 28px 22px; margin: 16px; max-width: none; border-radius: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    </div>
+    <div class="login-title">Dispatch Tracker</div>
+    <div class="login-sub">Buroneed Supplies Pvt Ltd &mdash; Secure Portal</div>
+    <div class="login-field">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Enter your username" autocomplete="username" />
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In &rarr;</button>
+    <div class="login-error" id="login-error">Incorrect username or password. Please try again.</div>
+    <div class="login-footer">For login credentials, contact Buroneed Supplies</div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Dispatch Tracker</div>
+      <div class="hdr-sub">Buroneed Supplies Pvt Ltd &mdash; Live</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div id="user-info" style="display:none;">
+      <span class="user-badge"><span class="user-dot"></span><span id="user-label">User</span></span>
+    </div>
+    <div class="view-toggle" id="view-toggle">
+      <button class="vbtn active" id="btn-admin" onclick="setView('admin')">Admin View</button>
+      <button class="vbtn" id="btn-cust" onclick="setView('customer')">Customer View</button>
+    </div>
+    <button class="btn btn-blue" onclick="loadData()">&#8635; Refresh</button>
+    <button class="btn" id="logout-btn" onclick="doLogout()" style="display:none;color:#C62828;border-color:#fecaca;">&#128275; Logout</button>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-wrap">
+  <div class="kpi"><div class="kpi-lbl">Total Orders</div><div class="kpi-val c-blue" id="k-total">—</div><div class="kpi-meta" id="k-total-sub">loading&hellip;</div></div>
+  <div class="kpi"><div class="kpi-lbl">Delivered</div><div class="kpi-val c-green" id="k-del">—</div><div class="kpi-meta" id="k-del-sub">—</div></div>
+  <div class="kpi"><div class="kpi-lbl">In Transit</div><div class="kpi-val c-indigo" id="k-transit">—</div><div class="kpi-meta">active shipments</div></div>
+  <div class="kpi"><div class="kpi-lbl">Pending Dispatch</div><div class="kpi-val c-gray" id="k-pending">—</div><div class="kpi-meta">awaiting pickup</div></div>
+  <div class="kpi"><div class="kpi-lbl">Delayed</div><div class="kpi-val c-orange" id="k-delayed">—</div><div class="kpi-meta">needs attention</div></div>
+  <div class="kpi"><div class="kpi-lbl">Returned</div><div class="kpi-val c-red" id="k-return">—</div><div class="kpi-meta">returned / cancelled</div></div>
+</div>
+
+<!-- Customer View Bar -->
+<div class="cust-bar" id="cust-bar">
+  <label>Customer View &mdash; filter by:</label>
+  <select id="cust-field">
+    <option value="Store CC Code">CC Code</option>
+    <option value="Store Outlet ID">Outlet ID</option>
+    <option value="Billing Name">Billing Name</option>
+    <option value="Store code">Store Name</option>
+  </select>
+  <input id="cust-val" type="text" placeholder="Enter your code / name&hellip;" oninput="applyFilters()" />
+  <span class="cust-info">Showing orders for your locations only</span>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <select id="f-billing" onchange="applyFilters()"><option value="">All Billing Names</option></select>
+  <select id="f-state" onchange="applyFilters()"><option value="">All States</option></select>
+  <select id="f-city" onchange="applyFilters()"><option value="">All Cities</option></select>
+  <select id="f-month" onchange="applyFilters()"><option value="">Service Month</option></select>
+  <select id="f-cat" onchange="applyFilters()"><option value="">All Categories</option></select>
+  <select id="f-status" onchange="applyFilters()">
+    <option value="">All Statuses</option>
+    <option value="DELIVERED">Delivered</option>
+    <option value="IN TRANSIT">In Transit</option>
+    <option value="DELAYED">Delayed</option>
+    <option value="RETURN">Returned</option>
+    <option value="PENDING">Pending for Dispatch</option>
+    <option value="CANCELLED">Cancelled</option>
+  </select>
+  <div class="filter-sep"></div>
+  <input type="text" id="f-search" placeholder="Search challan, store, outlet ID, docket no&hellip;" oninput="applyFilters()" />
+  <button class="btn" onclick="resetFilters()">Clear</button>
+  <button class="btn btn-green" onclick="downloadCSV()">&#8659; Download Excel</button>
+</div>
+
+<!-- Detail Panel -->
+<div style="margin: 12px 20px 0;">
+  <div class="det-panel" id="det-panel">
+    <div class="det-hdr">
+      <div class="det-hdr-left">
+        <h3 id="det-title">Order Detail</h3>
+        <p id="det-sub"></p>
+      </div>
+      <button class="det-close" onclick="closeDetail()" title="Close">&#x2715;</button>
+    </div>
+    <div class="det-body" id="det-body"></div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="tbl-wrap" style="margin-top: 12px;">
+  <div class="tbl-head">
+    <div class="tbl-head-left">
+      <span class="tbl-title">Order List</span>
+      <span class="tbl-cnt" id="tbl-cnt"></span>
+    </div>
+    <span style="font-size:11px; color:#aaa;">Click any row to see shipment details</span>
+  </div>
+  <div class="tbl-scroll" id="tbl-scroll">
+    <div class="empty-msg" style="color:#ccc;padding:60px 0;">Please sign in to view your dispatch data.</div>
+  </div>
+</div>
+
+<div class="footer">Buroneed Supplies Pvt Ltd &mdash; Dispatch Tracker &mdash; Data refreshed from Google Sheets on load</div>
+
+<script>
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVjmOSsl7LZbn_RBFeF9Cq18rquXLlfiAs4PpeKnJnP1KZzbJ58dxXgS9DmyaAX2g1eUmLyNrEHT18/pub?output=csv';
+
+// ── CUSTOMER LOGIN CONFIG ──────────────────────────────────────────────────────
+// role:'admin' → sees ALL data. role:'customer' → sees only their rows.
+// filterField: key from C object below. filterValue: value to match (case-insensitive).
+// TO ADD A CUSTOMER: copy a block, change username/password/filterValue/label.
+const CUSTOMERS = {
+  'admin':   { password: 'Admin@2026',  role: 'admin',    label: 'Admin — Full Access' },
+  'zomato':  { password: 'Zomato@123',  role: 'customer', filterField: 'billing', filterValue: 'ZOMATO',  label: 'Zomato'  },
+  'blinkit': { password: 'Blink@456',   role: 'customer', filterField: 'billing', filterValue: 'BLINKIT', label: 'Blinkit' },
+  'blink commerce': { password: 'Blinkc@456',   role: 'customer', filterField: 'billing', filterValue: 'BLINK commerce', label: 'Blink commerce' }
+
+};
+
+const C = {
+  sr:'SR NO.', subject:'Mail Subject', recvDate:'Mail received date',
+  billing:'Billing Name', category:'Order Catagory',
+  state:'State', city:'City', outletId:'Store Outlet ID',
+  ccCode:'Store CC Code', storeName:'Store code', address:'Store Address',
+  pocName:'Delivery contact Name', pocPhone:'Delivery contact Number',
+  month:'Order Service Month', amount:'Order Amount',
+  challan:'Challan Number', challanDt:'Challan Date', challanLk:'Challan Copy',
+  dispMode:'Dispatch Mode', trackId:'Dispatch Tracking ID',
+  parcelQty:'Dispatch Parcel Qty', dispDate:'Dispatch Date',
+  status:'Delivery Status', delivDate:'Delivery Date',
+  podStatus:'Proof of Delivery Status', podLink:'Proof of Delivery Link',
+  weight:'Consignment Weight', remarks:'Dispatch Remarks'
+};
+
+let allData = [], filteredData = [], selIdx = null, view = 'admin';
+let sortCol = null, sortDir = 'desc';
+let currentUser = null;
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+function checkLogin() {
+  try {
+    const saved = sessionStorage.getItem('dt_session');
+    if (saved) {
+      const u = JSON.parse(saved);
+      if (CUSTOMERS[u.username] && CUSTOMERS[u.username].password === u.password) {
+        currentUser = { username: u.username, ...CUSTOMERS[u.username] };
+        document.getElementById('login-screen').classList.add('hidden');
+        applyLoginUI();
+        return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+function doLogin() {
+  const username = (document.getElementById('login-user').value || '').trim().toLowerCase();
+  const password = document.getElementById('login-pass').value || '';
+  const err = document.getElementById('login-error');
+  if (!username || !password || !CUSTOMERS[username] || CUSTOMERS[username].password !== password) {
+    err.classList.add('show');
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+    return;
+  }
+  err.classList.remove('show');
+  currentUser = { username, ...CUSTOMERS[username] };
+  try { sessionStorage.setItem('dt_session', JSON.stringify({ username, password })); } catch(e) {}
+  document.getElementById('login-screen').classList.add('hidden');
+  applyLoginUI();
+  loadData();
+}
+
+function doLogout() {
+  try { sessionStorage.removeItem('dt_session'); } catch(e) {}
+  currentUser = null; allData = []; filteredData = [];
+  view = 'admin';
+  document.getElementById('btn-admin').classList.add('active');
+  document.getElementById('btn-cust').classList.remove('active');
+  document.getElementById('cust-bar').classList.remove('on');
+  document.getElementById('tbl-scroll').innerHTML = '<div class="empty-msg" style="color:#ccc;padding:60px 0;">Please sign in to view your dispatch data.</div>';
+  ['k-total','k-del','k-transit','k-pending','k-delayed','k-return'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('user-info').style.display = 'none';
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('view-toggle').style.display = 'flex';
+}
+
+function applyLoginUI() {
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  document.getElementById('user-label').textContent = currentUser ? currentUser.label : '';
+  document.getElementById('user-info').style.display = 'flex';
+  document.getElementById('logout-btn').style.display = 'flex';
+  document.getElementById('view-toggle').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('f-billing').style.display = isAdmin ? '' : 'none';
+  if (!isAdmin) { document.getElementById('cust-bar').style.display = 'none'; }
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+function parseDate(str) {
+  if (!str || str === 'NA' || str === '—') return 0;
+  const m1 = str.match(/^(\d{1,2})[\/\-]([A-Za-z]+)[\/\-](\d{4})$/);
+  if (m1) { const mo = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11}[m1[2].toLowerCase().slice(0,3)]; if (mo!==undefined) return new Date(+m1[3],mo,+m1[1]).getTime(); }
+  const m2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m2) return new Date(+m2[3],+m2[2]-1,+m2[1]).getTime();
+  const m3 = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (m3) return new Date(+m3[1],+m3[2]-1,+m3[3]).getTime();
+  return 0;
+}
+
+const SORT_COL_MAP = {
+  sr: { type: 'num', key: () => C.sr },
+  challan: { type: 'text', key: () => C.challan },
+  store: { type: 'text', key: () => C.storeName },
+  state: { type: 'text', key: () => C.state },
+  city: { type: 'text', key: () => C.city },
+  category: { type: 'text', key: () => C.category },
+  dispMode: { type: 'text', key: () => C.dispMode },
+  trackId: { type: 'text', key: () => C.trackId },
+  disp: { type: 'date', key: () => C.dispDate },
+  status: { type: 'text', key: () => C.status },
+  deliv: { type: 'date', key: () => C.delivDate },
+};
+function toggleSort(col) {
+  const numericDefault = col === 'sr';
+  sortDir = sortCol === col ? (sortDir === 'asc' ? 'desc' : 'asc') : (numericDefault ? 'asc' : 'asc');
+  sortCol = col;
+  const def = SORT_COL_MAP[col];
+  if (!def) return;
+  filteredData.sort((a, b) => {
+    const fieldKey = def.key();
+    if (def.type === 'num') {
+      const na = parseInt(a[fieldKey]) || 0, nb = parseInt(b[fieldKey]) || 0;
+      return sortDir === 'asc' ? na - nb : nb - na;
+    }
+    if (def.type === 'date') {
+      const da = parseDate(a[fieldKey]), db = parseDate(b[fieldKey]);
+      return sortDir === 'asc' ? da - db : db - da;
+    }
+    // text
+    const sa = (a[fieldKey] || '').toLowerCase(), sb = (b[fieldKey] || '').toLowerCase();
+    return sortDir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+  });
+  renderTable(filteredData);
+}
+
+function parseCSVLine(line) {
+  const res = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; } else if (ch === ',' && !inQ) { res.push(cur.trim()); cur = ''; } else { cur += ch; }
+  }
+  res.push(cur.trim()); return res;
+}
+
+function parseCSVSheet(text) {
+  const clean = v => v.replace(/\\([_*\[\]\\|])/g,'$1').trim();
+  const lines = text.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCSVLine(lines[i]);
+    const srVal = (cells[0]||'').trim();
+    if (!srVal || isNaN(Number(srVal))) continue;
+    const row = {}; headers.forEach((h,idx) => { row[h] = clean(cells[idx]||''); }); rows.push(row);
+  }
+  return rows;
+}
+
+async function loadData() {
+  document.getElementById('tbl-scroll').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading from Google Sheets&hellip;</p></div>';
+  closeDetail();
+  try {
+    const resp = await fetch(SHEET_CSV_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    allData = parseCSVSheet(text);
+    if (!allData.length) { document.getElementById('tbl-scroll').innerHTML = '<div class="error-msg">Could not parse data. Make sure the sheet is published as CSV.</div>'; return; }
+    populateFilters(); applyFilters();
+  } catch(e) {
+    document.getElementById('tbl-scroll').innerHTML = `<div class="error-msg">Could not load data: ${e.message||e}<br><br>Click Refresh to try again.</div>`;
+  }
+}
+
+function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort(); }
+
+function populateFilters() {
+  const fill = (id, vals) => { const el=document.getElementById(id); const f=el.options[0].outerHTML; el.innerHTML=f+vals.map(v=>`<option value="${v}">${v}</option>`).join(''); };
+  fill('f-billing', uniq(allData.map(r => r[C.billing])));
+  fill('f-state',   uniq(allData.map(r => r[C.state])));
+  fill('f-city',    uniq(allData.map(r => r[C.city])));
+  fill('f-month',   uniq(allData.map(r => r[C.month])).reverse());
+  fill('f-cat',     uniq(allData.map(r => r[C.category])));
+}
+
+function normStatus(s) { return (s||'').toUpperCase().trim(); }
+function matchStatus(rowStatus, filter) {
+  const s = normStatus(rowStatus); if (!filter) return true;
+  if (filter === 'IN TRANSIT') return s.includes('TRANSIT');
+  if (filter === 'RETURN') return s.includes('RETURN');
+  if (filter === 'CANCELLED') return s.includes('CANCEL');
+  if (filter === 'PENDING') return s.includes('PENDING');
+  return s === filter;
+}
+
+function applyFilters() {
+  const billing=document.getElementById('f-billing').value, state=document.getElementById('f-state').value,
+        city=document.getElementById('f-city').value, month=document.getElementById('f-month').value,
+        cat=document.getElementById('f-cat').value, status=document.getElementById('f-status').value,
+        search=document.getElementById('f-search').value.toLowerCase(),
+        custField=document.getElementById('cust-field').value,
+        custVal=document.getElementById('cust-val').value.trim().toLowerCase();
+
+  filteredData = allData.filter(r => {
+    if (currentUser && currentUser.role === 'customer' && currentUser.filterField) {
+      const cv=(r[C[currentUser.filterField]]||'').toLowerCase(), lv=(currentUser.filterValue||'').toLowerCase();
+      if (!cv.includes(lv)) return false;
+    }
+    if (billing && r[C.billing] !== billing) return false;
+    if (state   && r[C.state]   !== state)   return false;
+    if (city    && r[C.city]    !== city)     return false;
+    if (month   && r[C.month]   !== month)    return false;
+    if (cat     && r[C.category]!== cat)      return false;
+    if (status  && !matchStatus(r[C.status], status)) return false;
+    if (view === 'customer' && custVal) { if (!(r[custField]||'').toLowerCase().includes(custVal)) return false; }
+    if (search) {
+      const hay=[r[C.challan],r[C.storeName],r[C.outletId],r[C.ccCode],r[C.trackId],r[C.city],r[C.billing],r[C.subject],r[C.dispMode]].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  updateKPIs(filteredData); renderTable(filteredData);
+}
+
+function resetFilters() {
+  ['f-billing','f-state','f-city','f-month','f-cat','f-status'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  document.getElementById('f-search').value = ''; document.getElementById('cust-val').value = '';
+  applyFilters();
+}
+
+function updateKPIs(data) {
+  const n=data.length, del=data.filter(r=>normStatus(r[C.status])==='DELIVERED').length,
+        transit=data.filter(r=>normStatus(r[C.status]).includes('TRANSIT')).length,
+        delayed=data.filter(r=>normStatus(r[C.status])==='DELAYED').length,
+        ret=data.filter(r=>normStatus(r[C.status]).includes('RETURN')||normStatus(r[C.status]).includes('CANCEL')).length,
+        pending=data.filter(r=>normStatus(r[C.status]).includes('PENDING')||!normStatus(r[C.status])).length;
+  document.getElementById('k-total').textContent=n; document.getElementById('k-del').textContent=del;
+  document.getElementById('k-transit').textContent=transit; document.getElementById('k-pending').textContent=pending;
+  document.getElementById('k-delayed').textContent=delayed; document.getElementById('k-return').textContent=ret;
+  document.getElementById('k-total-sub').textContent = view==='admin' ? 'all locations' : 'your locations';
+  document.getElementById('k-del-sub').textContent = n ? Math.round(del/n*100)+'% delivery rate' : '—';
+}
+
+function statusBadge(raw) {
+  const s=normStatus(raw);
+  if (s==='DELIVERED') return ['bdg-delivered','Delivered'];
+  if (s.includes('TRANSIT')) return ['bdg-transit','In Transit'];
+  const label = s==='DELAYED'?'Delayed':s.includes('RETURN')?'Returned':s.includes('CANCEL')?'Cancelled':s.includes('PENDING')||!s?'Pending for Dispatch':(raw||'Unknown');
+  return ['bdg-alert', label];
+}
+
+function isLink(v) { return v && (v.startsWith('http://') || v.startsWith('https://')); }
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderCards(data) {
+  let html = '<div class="card-list">';
+  data.forEach((r, idx) => {
+    const [bc,bl]=statusBadge(r[C.status]), hasCh=isLink(r[C.challanLk]), hasPOD=isLink(r[C.podLink]);
+    const trackTxt = r[C.trackId] && r[C.trackId] !== 'NA' ? r[C.trackId] : '';
+    html += `<div class="mob-card ${idx===selIdx?'sel':''}" onclick="selectRow(${idx})" data-idx="${idx}">
+      <div class="mob-top"><div>
+        <div class="mob-sr">#${r[C.sr]||''} &middot; ${r[C.challan]||'—'}</div>
+        <div class="mob-store">${r[C.storeName]||'—'}</div>
+        <div class="mob-meta">&#128205; ${r[C.city]||''}${r[C.state]?', '+r[C.state]:''}</div>
+        <div class="mob-meta">${r[C.billing]||''} &middot; ${r[C.category]||''}</div>
+      </div><span class="bdg ${bc}" style="flex-shrink:0;margin-left:8px;">${bl}</span></div>
+      <div class="mob-dates">
+        <span>&#128230; <strong>Dispatched:</strong> ${r[C.dispDate]||'—'}</span>
+        <span style="color:#ccc">&#8594;</span>
+        <span>&#9989; <strong>Delivered:</strong> ${r[C.delivDate]||'—'}</span>
+      </div>
+      ${trackTxt?`<div class="mob-track">&#128667; ${r[C.dispMode]||''} &middot; <span style="color:#0C447C;">${trackTxt}</span></div>`:''}
+      ${r[C.pocName]||r[C.pocPhone]?`<div class="mob-contact">${r[C.pocName]?`&#128100; ${r[C.pocName]}`:''}${r[C.pocPhone]?`&nbsp;&nbsp;<a href="tel:${r[C.pocPhone]}" style="color:#185FA5;text-decoration:none;" onclick="event.stopPropagation()">&#128222; ${r[C.pocPhone]}</a>`:''}</div>`:''}
+      <div class="mob-docs">
+        ${hasCh?`<a class="doc-up" href="${r[C.challanLk]}" target="_blank" onclick="event.stopPropagation()">&#10003; Challan</a>`:`<span class="doc-pend">&#8226; Challan pending</span>`}
+        ${hasPOD?`<a class="doc-up" href="${r[C.podLink]}" target="_blank" onclick="event.stopPropagation()">&#10003; POD</a>`:`<span class="doc-pend">&#8226; POD pending</span>`}
+      </div>
+    </div>`;
+  });
+  html += '</div>'; document.getElementById('tbl-scroll').innerHTML = html;
+}
+
+function renderTable(data) {
+  document.getElementById('tbl-cnt').textContent = data.length ? `${data.length} orders` : '';
+  if (!data.length) { document.getElementById('tbl-scroll').innerHTML = '<div class="empty-msg">No orders match the current filters.</div>'; return; }
+  if (window.innerWidth <= 680) { renderCards(data); return; }
+  const arrow = (col, type) => {
+    if (sortCol !== col) return ' <span style="color:#ccc;font-size:10px;">&#8597;</span>';
+    if (type === 'num') return sortDir === 'asc' ? ' <span style="color:#185FA5;font-size:10px;">&#8593; Low→High</span>' : ' <span style="color:#185FA5;font-size:10px;">&#8595; High→Low</span>';
+    if (type === 'date') return sortDir === 'asc' ? ' <span style="color:#185FA5;font-size:10px;">&#8593; Oldest</span>' : ' <span style="color:#185FA5;font-size:10px;">&#8595; Newest</span>';
+    return sortDir === 'asc' ? ' <span style="color:#185FA5;font-size:10px;">&#8593; A→Z</span>' : ' <span style="color:#185FA5;font-size:10px;">&#8595; Z→A</span>';
+  };
+  const s = 'cursor:pointer;user-select:none;white-space:nowrap;';
+  let html = `<table><thead><tr>
+    <th style="${s}" onclick="toggleSort('sr')">SR${arrow('sr','num')}</th>
+    <th style="${s}" onclick="toggleSort('challan')">Challan #${arrow('challan','text')}</th>
+    <th style="${s}" onclick="toggleSort('store')">Store / Outlet${arrow('store','text')}</th>
+    <th style="${s}" onclick="toggleSort('state')">State &middot; City${arrow('state','text')}</th>
+    <th style="${s}" onclick="toggleSort('category')">Category${arrow('category','text')}</th>
+    <th style="${s}" onclick="toggleSort('dispMode')">Dispatch Via${arrow('dispMode','text')}</th>
+    <th style="${s}" onclick="toggleSort('trackId')">Tracking ID${arrow('trackId','text')}</th>
+    <th style="${s}" onclick="toggleSort('disp')">Dispatch Date${arrow('disp','date')}</th>
+    <th style="${s}" onclick="toggleSort('status')">Status${arrow('status','text')}</th>
+    <th style="${s}" onclick="toggleSort('deliv')">Delivery Date${arrow('deliv','date')}</th>
+    <th>Docs</th>
+  </tr></thead><tbody>`;
+  data.forEach((r, idx) => {
+    const [bc,bl]=statusBadge(r[C.status]), hasCh=isLink(r[C.challanLk]), hasPOD=isLink(r[C.podLink]);
+    const docs=(hasCh?`<a class="doc-up" href="${r[C.challanLk]}" target="_blank">&#10003; Challan</a>`:`<span class="doc-pend">&#8226; Challan</span>`)
+              +(hasPOD?`<a class="doc-up" href="${r[C.podLink]}" target="_blank">&#10003; POD</a>`:`<span class="doc-pend">&#8226; POD</span>`);
+    html += `<tr onclick="selectRow(${idx})" data-idx="${idx}" ${idx===selIdx?'class="sel"':''}>
+      <td style="color:#aaa;">${r[C.sr]}</td>
+      <td><strong>${r[C.challan]||'—'}</strong></td>
+      <td>
+        <div style="font-size:12px;font-weight:600;">${r[C.storeName]||'—'}</div>
+        <div style="font-size:11px;color:#999;">ID: ${r[C.outletId]||'—'} &middot; CC: ${r[C.ccCode]||'—'}</div>
+        ${r[C.pocName]?`<div style="font-size:11px;color:#555;margin-top:3px;">&#128100; ${r[C.pocName]}</div>`:''}
+        ${r[C.pocPhone]?`<div style="font-size:11px;"><a href="tel:${r[C.pocPhone]}" style="color:#185FA5;text-decoration:none;">&#128222; ${r[C.pocPhone]}</a></div>`:''}
+      </td>
+      <td><div>${r[C.state]||'—'}</div><div style="font-size:11px;color:#999;">${r[C.city]||'—'}</div></td>
+      <td>${r[C.category]||'—'}</td><td>${r[C.dispMode]||'—'}</td>
+      <td style="color:#185FA5;font-size:11px;">${r[C.trackId]&&r[C.trackId]!=='NA'?r[C.trackId]:'—'}</td>
+      <td>${r[C.dispDate]||'—'}</td>
+      <td><span class="bdg ${bc}">${bl}</span></td>
+      <td>${r[C.delivDate]||'—'}</td>
+      <td style="white-space:nowrap;">${docs}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>'; document.getElementById('tbl-scroll').innerHTML = html;
+}
+
+function selectRow(idx) {
+  if (selIdx === idx) { closeDetail(); return; }
+  selIdx = idx;
+  document.querySelectorAll('tbody tr').forEach(tr => tr.classList.toggle('sel', parseInt(tr.dataset.idx)===idx));
+  showDetail(filteredData[idx]);
+}
+
+function showDetail(r) {
+  const s=normStatus(r[C.status]), isDel=s==='DELIVERED', isRet=s.includes('RETURN')||s.includes('CANCEL'),
+        isDel2=isDel||isRet, isDisp=!!r[C.dispDate]&&r[C.trackId]!=='NA'&&r[C.trackId],
+        isDelayed=s==='DELAYED', hasCh=isLink(r[C.challanLk]), hasPOD=isLink(r[C.podLink]);
+  const d=(done,active,type)=>done?'tl-dot done':active?`tl-dot ${type||'active'}`:'tl-dot';
+  const l=done=>`tl-line${done?' done':''}`;
+  const amtNum=parseFloat(r[C.amount])||0;
+  const amtFmt=amtNum>=1000?'&#8377;'+amtNum.toLocaleString('en-IN',{minimumFractionDigits:2}):'&#8377;'+(r[C.amount]||'0');
+  document.getElementById('det-title').textContent = r[C.challan]||'Order Detail';
+  document.getElementById('det-sub').textContent = `${r[C.storeName]||''} · ${r[C.city]||''}, ${r[C.state]||''}`;
+  document.getElementById('det-body').innerHTML = `
+    <div class="det-grid">
+      <div class="det-field"><label>Billing Name</label><span>${r[C.billing]||'—'}</span></div>
+      <div class="det-field"><label>Store Name</label><span>${r[C.storeName]||'—'}</span></div>
+      <div class="det-field"><label>Outlet ID</label><span>${r[C.outletId]||'—'}</span></div>
+      <div class="det-field"><label>CC Code</label><span>${r[C.ccCode]||'—'}</span></div>
+      <div class="det-field"><label>Order Category</label><span>${r[C.category]||'—'}</span></div>
+      <div class="det-field"><label>Service Month</label><span>${r[C.month]||'—'}</span></div>
+      <div class="det-field"><label>Order Value</label><span>${amtFmt}</span></div>
+      <div class="det-field"><label>Mail Subject</label><span style="font-size:11px;">${r[C.subject]||'—'}</span></div>
+      <div class="det-field"><label>Challan No.</label><span>${r[C.challan]||'—'}</span></div>
+      <div class="det-field"><label>Challan Date</label><span>${r[C.challanDt]||'—'}</span></div>
+      <div class="det-field"><label>Dispatch Mode</label><span>${r[C.dispMode]||'—'}</span></div>
+      <div class="det-field"><label>Tracking / Docket</label><span style="color:#185FA5;">${r[C.trackId]||'—'}</span></div>
+      <div class="det-field"><label>Parcels</label><span>${r[C.parcelQty]||'—'}</span></div>
+      <div class="det-field"><label>Weight (kg)</label><span>${r[C.weight]||'—'}</span></div>
+      <div class="det-field"><label>Dispatch Date</label><span>${r[C.dispDate]||'—'}</span></div>
+      <div class="det-field"><label>Delivery Date</label><span>${r[C.delivDate]||'—'}</span></div>
+    </div>
+    <div class="det-addr">
+      <strong>Delivery Address</strong>
+      <div style="margin-bottom:10px;font-size:12px;color:#333;line-height:1.5;">${r[C.address]||'—'}</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;border-top:1px solid #e8e8e8;padding-top:10px;margin-top:4px;">
+        <div>
+          <span style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:3px;">Contact Name</span>
+          <span style="font-size:12px;font-weight:600;color:#1a1a1a;">&#128100; ${r[C.pocName]||'—'}</span>
+        </div>
+        <div>
+          <span style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:3px;">Contact Number</span>
+          ${r[C.pocPhone]?`<a href="tel:${r[C.pocPhone]}" style="font-size:12px;font-weight:600;color:#185FA5;text-decoration:none;">&#128222; ${r[C.pocPhone]}</a>`:`<span style="font-size:12px;font-weight:600;color:#1a1a1a;">—</span>`}
+        </div>
+      </div>
+    </div>
+    ${r[C.remarks]?`<div class="det-remark"><strong>Remarks</strong>${r[C.remarks]}</div>`:''}
+    <div class="tl-section">
+      <div class="tl-title">Shipment Journey</div>
+      <div class="tl-row">
+        <div class="tl-step"><div class="tl-dot done"></div><div class="tl-label ok"><b>Order Received</b>${r[C.recvDate]||''}</div></div>
+        <div class="tl-line done"></div>
+        <div class="tl-step"><div class="${d(!!r[C.challan],!r[C.challan],'')}"></div><div class="tl-label ${r[C.challan]?'ok':''}"><b>Challan Created</b>${r[C.challanDt]||'—'}</div></div>
+        <div class="${l(hasCh)}"></div>
+        <div class="tl-step"><div class="${d(hasCh,!!r[C.challan]&&!hasCh,'')}"></div><div class="tl-label ${hasCh?'ok':''}"><b>${hasCh?'Challan Uploaded':'Challan Upload'}</b>${hasCh?'<span style="color:#2d7d32;font-size:10px;">&#10003; On Drive</span>':'<span style="color:#185FA5;font-size:10px;">Pending</span>'}</div></div>
+        <div class="${l(isDisp)}"></div>
+        <div class="tl-step"><div class="${d(isDisp,hasCh&&!isDisp,isDelayed?'warn':'active')}"></div><div class="tl-label ${isDelayed?'warn':isDisp?'ok':''}"><b>${isDelayed?'&#9888; Delayed':'Dispatched'}</b>${r[C.dispDate]||'—'}</div></div>
+        <div class="${l(isDel2)}"></div>
+        <div class="tl-step"><div class="${d(isDel2,isDisp&&!isDel2,isRet?'ret':'active')}"></div><div class="tl-label ${isRet?'ret':isDel?'ok':''}"><b>${isRet?'&#8617; Returned':isDel?'Delivered':'Delivery'}</b>${r[C.delivDate]||'—'}</div></div>
+        <div class="${l(hasPOD)}"></div>
+        <div class="tl-step"><div class="${d(hasPOD,isDel2&&!hasPOD,'')}"></div><div class="tl-label ${hasPOD?'ok':''}"><b>POD ${hasPOD?'Uploaded':'Pending'}</b>${hasPOD?'<span style="color:#2d7d32;font-size:10px;">&#10003; On Drive</span>':'<span style="color:#185FA5;font-size:10px;">Not uploaded</span>'}</div></div>
+      </div>
+      <div class="doc-btns">
+        ${hasCh?`<a href="${r[C.challanLk]}" target="_blank" class="btn">&#128196; Download Challan</a>`:`<button class="btn" disabled style="opacity:0.4;cursor:not-allowed;">&#128196; Challan (not uploaded)</button>`}
+        ${hasPOD?`<a href="${r[C.podLink]}" target="_blank" class="btn">&#128247; Download POD</a>`:`<button class="btn" disabled style="opacity:0.4;cursor:not-allowed;">&#128247; POD (not uploaded)</button>`}
+        ${r[C.trackId]&&r[C.trackId]!=='NA'?`<button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${r[C.trackId]}').then(()=>{this.textContent='Copied!'}).catch(()=>{})">&#128203; Copy Tracking ID</button>`:''}
+      </div>
+    </div>`;
+  document.getElementById('det-panel').classList.add('open');
+  document.getElementById('det-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeDetail() {
+  document.getElementById('det-panel').classList.remove('open');
+  selIdx = null;
+  document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('sel'));
+}
+
+function setView(v) {
+  if (currentUser && currentUser.role === 'customer') return;
+  view = v;
+  document.getElementById('btn-admin').classList.toggle('active', v==='admin');
+  document.getElementById('btn-cust').classList.toggle('active', v==='customer');
+  document.getElementById('cust-bar').classList.toggle('on', v==='customer');
+  applyFilters();
+}
+
+function downloadCSV() {
+  const h=['SR NO.','Mail Subject','Mail received date','Billing Name','Order Catagory','State','City','Store Outlet ID','Store CC Code','Store code','Store Address','Delivery contact Name','Delivery contact Number','Order Service Month','Order Amount','Challan Number','Challan Date','Challan Copy','Dispatch Mode','Dispatch Tracking ID','Dispatch Parcel Qty','Dispatch Date','Delivery Status','Delivery Date','Proof of Delivery Status','Proof of Delivery Link','Dispatch Remarks'];
+  const rows=filteredData.map(r=>[r[C.sr],r[C.subject],r[C.recvDate],r[C.billing],r[C.category],r[C.state],r[C.city],r[C.outletId],r[C.ccCode],r[C.storeName],r[C.address],r[C.pocName],r[C.pocPhone],r[C.month],r[C.amount],r[C.challan],r[C.challanDt],r[C.challanLk],r[C.dispMode],r[C.trackId],r[C.parcelQty],r[C.dispDate],r[C.status],r[C.delivDate],r[C.podStatus],r[C.podLink],r[C.remarks]]);
+  const csv=[h,...rows].map(row=>row.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'})),download:`dispatch-tracker-${new Date().toISOString().slice(0,10)}.csv`});
+  a.click();
+}
+
+let _resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer=setTimeout(()=>{ if(filteredData.length) renderTable(filteredData); },150); });
+if (checkLogin()) { loadData(); }
+</script>
+</body>
+</html>
