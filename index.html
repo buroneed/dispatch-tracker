@@ -65,6 +65,9 @@ tbody tr.sel td { background: #EFF6FF; }
 .doc-up { display:inline-flex; align-items:center; gap:3px; background:#e8f5e9; color:#2d7d32; font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; text-decoration:none; margin-right:4px; white-space:nowrap; border:1px solid #c8e6c9; }
 .doc-up:hover { background:#c8e6c9; }
 .doc-pend { display:inline-flex; align-items:center; gap:3px; color:#185FA5; font-size:11px; font-weight:500; margin-right:6px; white-space:nowrap; }
+.wa-btn { display:inline-flex; align-items:center; gap:3px; background:#25D366; color:#fff; font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; text-decoration:none; margin-left:4px; white-space:nowrap; cursor:pointer; }
+.wa-btn:hover { background:#1DA851; }
+.wa-sent { display:inline-flex; align-items:center; gap:3px; background:#e8f5e9; color:#2d7d32; font-size:10px; font-weight:600; padding:2px 7px; border-radius:20px; margin-left:4px; white-space:nowrap; border:1px solid #c8e6c9; }
 .det-panel { margin: 0 20px; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; overflow: hidden; display: none; }
 .det-panel.open { display: block; margin-bottom: 0; }
 .det-hdr { background: #042C53; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
@@ -428,6 +431,9 @@ const SORT_COL_MAP = {
   category: { type: 'text', key: () => C.category },
   dispMode: { type: 'text', key: () => C.dispMode },
   trackId: { type: 'text', key: () => C.trackId },
+  parcelQty: { type: 'num',  key: () => C.parcelQty },
+  weight:    { type: 'num',  key: () => C.weight },
+  remarks:   { type: 'text', key: () => C.remarks },
   disp: { type: 'date', key: () => C.dispDate },
   status: { type: 'text', key: () => C.status },
   deliv: { type: 'date', key: () => C.delivDate },
@@ -697,15 +703,29 @@ function renderTable(data) {
     <th style="${s}" onclick="toggleSort('disp')">Dispatch Date${arrow('disp','date')}</th>
     <th style="${s}" onclick="toggleSort('status')">Status${arrow('status','text')}</th>
     <th style="${s}" onclick="toggleSort('deliv')">Delivery Date${arrow('deliv','date')}</th>
-    <th>Docs</th>
+    <th style="${s}" onclick="toggleSort('parcelQty')">Parcel Qty${arrow('parcelQty','num')}</th>
+    <th style="${s}" onclick="toggleSort('weight')">Weight (kg)${arrow('weight','num')}</th>
+    <th style="${s}" onclick="toggleSort('remarks')">Remarks${arrow('remarks','text')}</th>
+    <th>Docs &amp; WhatsApp</th>
   </tr></thead><tbody>`;
   data.forEach((r, idx) => {
     const [bc,bl]=statusBadge(r[C.status]), hasCh=isLink(r[C.challanLk]), hasPOD=isLink(r[C.podLink]);
-    const docs=(hasCh?`<a class="doc-up" href="${r[C.challanLk]}" target="_blank">&#10003; Challan</a>`:`<span class="doc-pend">&#8226; Challan</span>`)
-              +(hasPOD?`<a class="doc-up" href="${r[C.podLink]}" target="_blank">&#10003; POD</a>`:`<span class="doc-pend">&#8226; POD</span>`);
+    const waKey = 'wa_sent_' + (r[C.sr]||r[C.challan]||idx);
+    let waSentRaw; try { waSentRaw = localStorage.getItem(waKey); } catch(e) { waSentRaw = null; }
+    const waBtn = r[C.pocPhone]
+      ? (waSentRaw
+          ? `<span class="wa-sent" title="Sent on ${waSentRaw}">&#10003; WA ${waSentRaw}</span>`
+          : `<a class="wa-btn" href="${buildWA(r)}" target="_blank" onclick="markWASent('${waKey}',this);event.stopPropagation();">&#128232; WA</a>`)
+      : '';
+    const docs=(hasCh?`<a class="doc-up" href="${r[C.challanLk]}" target="_blank" onclick="event.stopPropagation()">&#10003; Challan</a>`:`<span class="doc-pend">&#8226; Challan</span>`)
+              +(hasPOD?`<a class="doc-up" href="${r[C.podLink]}" target="_blank" onclick="event.stopPropagation()">&#10003; POD</a>`:`<span class="doc-pend">&#8226; POD</span>`)
+              + waBtn;
     html += `<tr onclick="selectRow(${idx})" data-idx="${idx}" ${idx===selIdx?'class="sel"':''}>
       <td style="color:#aaa;">${r[C.sr]}</td>
-      <td><strong>${r[C.challan]||'—'}</strong></td>
+      <td>
+        <div style="font-weight:600;">${r[C.challan]||'—'}</div>
+        ${r[C.challanDt]?`<div style="font-size:11px;color:#999;margin-top:2px;">${r[C.challanDt]}</div>`:''}
+      </td>
       <td>
         <div style="font-size:12px;font-weight:600;">${r[C.storeName]||'—'}</div>
         <div style="font-size:11px;color:#999;">ID: ${r[C.outletId]||'—'} &middot; CC: ${r[C.ccCode]||'—'}</div>
@@ -718,6 +738,9 @@ function renderTable(data) {
       <td>${r[C.dispDate]||'—'}</td>
       <td><span class="bdg ${bc}">${bl}</span></td>
       <td>${r[C.delivDate]||'—'}</td>
+      <td style="text-align:center;">${r[C.parcelQty]||'—'}</td>
+      <td style="text-align:center;">${r[C.weight]||'—'}</td>
+      <td style="font-size:11px;color:#666;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r[C.remarks]||''}">${r[C.remarks]||'—'}</td>
       <td style="white-space:nowrap;">${docs}</td>
     </tr>`;
   });
@@ -759,6 +782,7 @@ function showDetail(r) {
       <div class="det-field"><label>Weight (kg)</label><span>${r[C.weight]||'—'}</span></div>
       <div class="det-field"><label>Dispatch Date</label><span>${r[C.dispDate]||'—'}</span></div>
       <div class="det-field"><label>Delivery Date</label><span>${r[C.delivDate]||'—'}</span></div>
+      <div class="det-field"><label>POD Status</label><span>${r[C.podStatus]||'—'}</span></div>
     </div>
     <div class="det-addr">
       <strong>Delivery Address</strong>
@@ -799,6 +823,15 @@ function showDetail(r) {
     </div>`;
   document.getElementById('det-panel').classList.add('open');
   document.getElementById('det-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function markWASent(key, el) {
+  const now = new Date();
+  const ts = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+  try { localStorage.setItem(key, ts); } catch(e) {}
+  setTimeout(() => {
+    el.outerHTML = `<span class="wa-sent" title="Sent on ${ts}">&#10003; WA ${ts}</span>`;
+  }, 300);
 }
 
 function buildWA(r) {
