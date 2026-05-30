@@ -519,7 +519,7 @@ async function loadData() {
   document.getElementById('tbl-scroll').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading from Google Sheets&hellip;</p></div>';
   closeDetail();
   try {
-    const resp = await fetch(SHEET_CSV_URL);
+    const resp = await fetch(SHEET_CSV_URL + '&t=' + Date.now(), {cache: 'no-store'});
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const text = await resp.text();
     allData = parseCSVSheet(text);
@@ -527,7 +527,24 @@ async function loadData() {
     const ts = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
     document.getElementById('last-refresh').textContent = ts;
     if (!allData.length) { document.getElementById('tbl-scroll').innerHTML = '<div class="error-msg">Could not parse data. Make sure the sheet is published as CSV.</div>'; return; }
-    populateFilters(); applyFilters();
+    const prevSelections = {
+      billing: document.getElementById('f-billing').value,
+      state:   document.getElementById('f-state').value,
+      city:    document.getElementById('f-city').value,
+      month:   document.getElementById('f-month').value,
+      cat:     document.getElementById('f-cat').value,
+      status:  document.getElementById('f-status').value,
+      subject: document.getElementById('f-subject').value,
+    };
+    populateFilters();
+    // Restore previous selections only if value still exists in new data
+    Object.entries(prevSelections).forEach(([key, val]) => {
+      const el = document.getElementById('f-' + key);
+      if (val && [...el.options].some(o => o.value === val)) { el.value = val; }
+      else { el.value = ''; }
+      refreshSDR('f-' + key);
+    });
+    applyFilters();
   } catch(e) {
     document.getElementById('tbl-scroll').innerHTML = `<div class="error-msg">Could not load data: ${e.message||e}<br><br>Click Refresh to try again.</div>`;
   }
