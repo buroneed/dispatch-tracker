@@ -533,7 +533,15 @@ async function loadData() {
   }
 }
 
-function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort(); }
+function uniq(arr) {
+  const seen = new Map();
+  arr.forEach(v => {
+    if (!v) return;
+    const key = v.trim().toLowerCase();
+    if (!seen.has(key)) seen.set(key, v.trim()); // keep first-seen casing
+  });
+  return [...seen.values()].sort((a,b) => a.localeCompare(b));
+}
 
 function populateFilters() {
   const fill = (id, vals) => { const el=document.getElementById(id); const f=el.options[0].outerHTML; el.innerHTML=f+vals.map(v=>`<option value="${v}">${v}</option>`).join(''); refreshSDR(id); };
