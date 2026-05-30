@@ -793,11 +793,47 @@ function showDetail(r) {
       <div class="doc-btns">
         ${hasCh?`<a href="${r[C.challanLk]}" target="_blank" class="btn">&#128196; Download Challan</a>`:`<button class="btn" disabled style="opacity:0.4;cursor:not-allowed;">&#128196; Challan (not uploaded)</button>`}
         ${hasPOD?`<a href="${r[C.podLink]}" target="_blank" class="btn">&#128247; Download POD</a>`:`<button class="btn" disabled style="opacity:0.4;cursor:not-allowed;">&#128247; POD (not uploaded)</button>`}
-        ${r[C.trackId]&&r[C.trackId]!=='NA'?`<button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${r[C.trackId]}').then(()=>{this.textContent='Copied!'}).catch(()=>{})">&#128203; Copy Tracking ID</button>`:''}
+        ${r[C.trackId]&&r[C.trackId]!=='NA'?`<button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${r[C.trackId]}').then(()=>{this.textContent='Copied ✓';setTimeout(()=>this.textContent='&#128203; Copy Tracking ID',1500)}).catch(()=>{})">&#128203; Copy Tracking ID</button>`:''}
+        ${r[C.pocPhone]?`<a href="${buildWA(r)}" target="_blank" class="btn btn-green">&#128232; WhatsApp Update</a>`:''}
       </div>
     </div>`;
   document.getElementById('det-panel').classList.add('open');
   document.getElementById('det-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function buildWA(r) {
+  const s = normStatus(r[C.status]);
+  const statusLine = s==='DELIVERED' ? `✅ *Delivered* on ${r[C.delivDate]||'—'}` :
+                     s.includes('TRANSIT') ? `🚚 *In Transit*\nTracking ID: ${r[C.trackId]||'—'}\nVia: ${r[C.dispMode]||'—'}` :
+                     s==='DELAYED' ? `⚠️ *Delayed*\nTracking ID: ${r[C.trackId]||'—'}` :
+                     s.includes('RETURN') ? `↩️ *Returned / Cancelled*` :
+                     `📦 Status: ${r[C.status]||'Pending Dispatch'}`;
+  const hasCh = isLink(r[C.challanLk]);
+  const hasPOD = isLink(r[C.podLink]);
+  const lines = [
+    `Hello ${r[C.pocName]||'Sir/Madam'},`,
+    ``,
+    `Greetings from *Buroneed Supplies Pvt Ltd*!`,
+    `Here is your shipment update:`,
+    ``,
+    `🏪 *Store:* ${r[C.storeName]||'—'}`,
+    `📍 *Location:* ${r[C.city]||'—'}, ${r[C.state]||'—'}`,
+    `🆔 *Outlet ID:* ${r[C.outletId]||'—'} | CC: ${r[C.ccCode]||'—'}`,
+    `📋 *Challan No:* ${r[C.challan]||'—'} | Date: ${r[C.challanDt]||'—'}`,
+    `📦 *Category:* ${r[C.category]||'—'}`,
+    `🚛 *Dispatch Via:* ${r[C.dispMode]||'—'}`,
+    `📅 *Dispatch Date:* ${r[C.dispDate]||'—'}`,
+    ``,
+    statusLine,
+    ``,
+    hasCh ? `📄 *Challan Copy:* ${r[C.challanLk]}` : '',
+    hasPOD ? `📄 *Proof of Delivery:* ${r[C.podLink]}` : '',
+    ``,
+    `For queries contact Buroneed Supplies.`,
+  ].filter(l => l !== null).join('\n');
+  const phone = (r[C.pocPhone]||'').replace(/\D/g,'');
+  const fullPhone = phone.startsWith('91') ? phone : '91'+phone;
+  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(lines)}`;
 }
 
 function closeDetail() {
