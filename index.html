@@ -36,6 +36,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .c-blue { color: #185FA5; } .c-green { color: #2d7d32; } .c-indigo { color: #3949AB; }
 .c-gray { color: #757575; } .c-orange { color: #E65100; } .c-red { color: #C62828; }
 .chart-card { background:#fff; border:1px solid #e8e8e8; border-radius:10px; padding:12px 14px; }
+.alert-section { margin:12px 20px 0; display:none; }
+.alert-section-title { font-size:12px; font-weight:700; color:#C62828; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.alert-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+.alert-card { background:#fff; border:1.5px solid #fecaca; border-radius:10px; padding:12px 14px; cursor:pointer; transition:border-color 0.15s,box-shadow 0.15s; }
+.alert-card:hover { border-color:#C62828; box-shadow:0 2px 8px rgba(198,40,40,0.12); }
+.alert-card.ok { border-color:#c8e6c9; cursor:default; }
+.alert-card.ok:hover { box-shadow:none; }
+.alert-lbl { font-size:10px; font-weight:600; color:#C62828; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:5px; }
+.alert-card.ok .alert-lbl { color:#2d7d32; }
+.alert-val { font-size:26px; font-weight:700; color:#C62828; line-height:1; letter-spacing:-0.5px; }
+.alert-card.ok .alert-val { color:#2d7d32; }
+.alert-sub { font-size:10px; color:#aaa; margin-top:4px; }
+.alert-card.ok .alert-sub { color:#81c784; }
 .chart-title { font-size:10px; font-weight:600; color:#777; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; }
 .chart-card canvas { height:160px !important; }
 .filter-bar { margin: 12px 20px 0; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -172,6 +185,7 @@ tbody tr.sel td { background: #EFF6FF; }
   .btn { height: 30px; padding: 0 11px; font-size: 11px; }
   .kpi-wrap { grid-template-columns: repeat(4, 1fr); padding: 10px 14px 0; gap: 7px; }
   #charts-section { grid-template-columns: 1fr !important; }
+  .alert-grid { grid-template-columns: repeat(2,1fr) !important; }
   .kpi { padding: 9px 10px; }
   .kpi-val { font-size: 20px; }
   .kpi-meta { display: none; }
@@ -266,6 +280,63 @@ tbody tr.sel td { background: #EFF6FF; }
   <div class="chart-card"><div class="chart-title">Top 8 States</div><canvas id="chart-state"></canvas></div>
   <div class="chart-card"><div class="chart-title">Top 8 Cities</div><canvas id="chart-city"></canvas></div>
   <div class="chart-card"><div class="chart-title">Dispatch Mode</div><canvas id="chart-dispmode"></canvas></div>
+</div>
+
+<!-- Data Quality Alert Section -->
+<div class="alert-section" id="alert-section">
+  <div class="alert-section-title">&#9888; Data Quality Alerts — Pending Updates (click any card to filter)</div>
+  <div class="alert-grid">
+    <div class="alert-card" id="alrt-challan" onclick="filterAlert('challan')">
+      <div class="alert-lbl">Blank Challan No.</div>
+      <div class="alert-val" id="alrt-challan-val">—</div>
+      <div class="alert-sub">orders missing challan</div>
+    </div>
+    <div class="alert-card" id="alrt-challanup" onclick="filterAlert('challanup')">
+      <div class="alert-lbl">Challan Not Uploaded</div>
+      <div class="alert-val" id="alrt-challanup-val">—</div>
+      <div class="alert-sub">no challan copy link</div>
+    </div>
+    <div class="alert-card" id="alrt-pod" onclick="filterAlert('pod')">
+      <div class="alert-lbl">POD Not Uploaded</div>
+      <div class="alert-val" id="alrt-pod-val">—</div>
+      <div class="alert-sub">no proof of delivery</div>
+    </div>
+    <div class="alert-card" id="alrt-track" onclick="filterAlert('track')">
+      <div class="alert-lbl">Tracking ID Missing</div>
+      <div class="alert-val" id="alrt-track-val">—</div>
+      <div class="alert-sub">no docket / tracking no.</div>
+    </div>
+    <div class="alert-card" id="alrt-address" onclick="filterAlert('address')">
+      <div class="alert-lbl">Address Missing</div>
+      <div class="alert-val" id="alrt-address-val">—</div>
+      <div class="alert-sub">delivery address blank</div>
+    </div>
+    <div class="alert-card" id="alrt-dispdate" onclick="filterAlert('dispdate')">
+      <div class="alert-lbl">Dispatch Date Missing</div>
+      <div class="alert-val" id="alrt-dispdate-val">—</div>
+      <div class="alert-sub">not yet dispatched</div>
+    </div>
+    <div class="alert-card" id="alrt-status" onclick="filterAlert('status')">
+      <div class="alert-lbl">Status Blank</div>
+      <div class="alert-val" id="alrt-status-val">—</div>
+      <div class="alert-sub">delivery status empty</div>
+    </div>
+    <div class="alert-card" id="alrt-poc" onclick="filterAlert('poc')">
+      <div class="alert-lbl">Contact Missing</div>
+      <div class="alert-val" id="alrt-poc-val">—</div>
+      <div class="alert-sub">no delivery contact info</div>
+    </div>
+    <div class="alert-card" id="alrt-weight" onclick="filterAlert('weight')">
+      <div class="alert-lbl">Weight Missing</div>
+      <div class="alert-val" id="alrt-weight-val">—</div>
+      <div class="alert-sub">consignment weight blank</div>
+    </div>
+    <div class="alert-card" id="alrt-amount" onclick="filterAlert('amount')">
+      <div class="alert-lbl">Order Amount Missing</div>
+      <div class="alert-val" id="alrt-amount-val">—</div>
+      <div class="alert-sub">order value not filled</div>
+    </div>
+  </div>
 </div>
 
 <!-- Customer View Bar -->
@@ -422,6 +493,7 @@ function doLogout() {
   document.getElementById('tbl-scroll').innerHTML = '<div class="empty-msg" style="color:#ccc;padding:60px 0;">Please sign in to view your dispatch data.</div>';
   ['k-total','k-del','k-transit','k-pending','k-delayed','k-return','k-blank'].forEach(id => document.getElementById(id).textContent = '—');
   document.getElementById('charts-section').style.display='none';
+  document.getElementById('alert-section').style.display='none';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
   document.getElementById('login-screen').classList.remove('hidden');
@@ -660,7 +732,72 @@ function updateKPIs(data) {
   document.getElementById('k-blank').textContent=blank;
   document.getElementById('k-total-sub').textContent = view==='admin' ? 'all locations' : 'your locations';
   document.getElementById('k-del-sub').textContent = n ? Math.round(del/n*100)+'% delivery rate' : '—';
+  updateAlerts(data);
   updateCharts(data);
+}
+
+let _alertFilter = null;
+function updateAlerts(data) {
+  if (!data.length) { document.getElementById('alert-section').style.display='none'; return; }
+  document.getElementById('alert-section').style.display='block';
+  const checks = [
+    { id:'challan',   test: r => !r[C.challan]||r[C.challan].trim()==='' },
+    { id:'challanup', test: r => !isLink(r[C.challanLk]) },
+    { id:'pod',       test: r => !isLink(r[C.podLink]) },
+    { id:'track',     test: r => !r[C.trackId]||r[C.trackId].trim()===''||r[C.trackId].trim()==='NA' },
+    { id:'address',   test: r => !r[C.address]||r[C.address].trim()==='' },
+    { id:'dispdate',  test: r => !r[C.dispDate]||r[C.dispDate].trim()==='' },
+    { id:'status',    test: r => !normStatus(r[C.status]) },
+    { id:'poc',       test: r => (!r[C.pocName]||r[C.pocName].trim()==='')&&(!r[C.pocPhone]||r[C.pocPhone].trim()==='') },
+    { id:'weight',    test: r => !r[C.weight]||r[C.weight].trim()==='' },
+    { id:'amount',    test: r => !r[C.amount]||r[C.amount].trim()===''||parseFloat(r[C.amount])===0 },
+  ];
+  checks.forEach(({id, test}) => {
+    const count = data.filter(test).length;
+    const card = document.getElementById('alrt-'+id);
+    document.getElementById('alrt-'+id+'-val').textContent = count;
+    if (count === 0) {
+      card.classList.add('ok');
+      card.onclick = null;
+    } else {
+      card.classList.remove('ok');
+      card.onclick = () => filterAlert(id);
+    }
+  });
+  // store checks for filter use
+  window._alertChecks = checks;
+}
+
+function filterAlert(id) {
+  if (!window._alertChecks) return;
+  const check = window._alertChecks.find(c => c.id === id);
+  if (!check) return;
+  // highlight active alert card
+  document.querySelectorAll('.alert-card').forEach(c => c.style.background='');
+  const card = document.getElementById('alrt-'+id);
+  if (card) card.style.background = '#fff5f5';
+  // filter table to matching rows
+  const prev = filteredData;
+  const alertData = filteredData.filter(check.test);
+  if (!alertData.length) return;
+  renderTable(alertData);
+  document.getElementById('tbl-cnt').textContent = alertData.length + ' orders (alert filter — click Clear to reset)';
+  // add clear alert button if not present
+  if (!document.getElementById('clear-alert-btn')) {
+    const btn = document.createElement('button');
+    btn.id = 'clear-alert-btn';
+    btn.className = 'btn';
+    btn.style.cssText = 'background:#fff0f0;border-color:#fecaca;color:#C62828;';
+    btn.innerHTML = '&#215; Clear Alert Filter';
+    btn.onclick = () => {
+      btn.remove();
+      document.querySelectorAll('.alert-card').forEach(c => c.style.background='');
+      renderTable(filteredData);
+      document.getElementById('tbl-cnt').textContent = filteredData.length + ' orders';
+    };
+    document.querySelector('.tbl-head').appendChild(btn);
+  }
+  document.getElementById('tbl-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 const _charts = {};
