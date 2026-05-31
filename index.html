@@ -459,6 +459,7 @@ const SORT_COL_MAP = {
   state: { type: 'text', key: () => C.state },
   city: { type: 'text', key: () => C.city },
   category: { type: 'text', key: () => C.category },
+  month:    { type: 'text', key: () => C.month },
   dispMode: { type: 'text', key: () => C.dispMode },
   trackId: { type: 'text', key: () => C.trackId },
   parcelQty: { type: 'num',  key: () => C.parcelQty },
@@ -777,6 +778,7 @@ function renderTable(data) {
     <th style="${s}" onclick="toggleSort('store')">Store / Outlet${arrow('store','text')}</th>
     <th style="${s}" onclick="toggleSort('state')">State &middot; City${arrow('state','text')}</th>
     <th style="${s}" onclick="toggleSort('category')">Category${arrow('category','text')}</th>
+    <th style="${s}" onclick="toggleSort('month')">Service Month${arrow('month','text')}</th>
     <th style="${s}" onclick="toggleSort('dispMode')">Dispatch Via${arrow('dispMode','text')}</th>
     <th style="${s}" onclick="toggleSort('trackId')">Tracking ID${arrow('trackId','text')}</th>
     <th style="${s}" onclick="toggleSort('disp')">Dispatch Date${arrow('disp','date')}</th>
@@ -812,7 +814,7 @@ function renderTable(data) {
         ${r[C.pocPhone]?`<div style="font-size:11px;"><a href="tel:${r[C.pocPhone]}" style="color:#185FA5;text-decoration:none;">&#128222; ${r[C.pocPhone]}</a></div>`:''}
       </td>
       <td><div>${r[C.state]||'—'}</div><div style="font-size:11px;color:#999;">${r[C.city]||'—'}</div></td>
-      <td>${r[C.category]||'—'}</td><td>${r[C.dispMode]||'—'}</td>
+      <td>${r[C.category]||'—'}</td><td style="font-size:11px;">${r[C.month]||'—'}</td><td>${r[C.dispMode]||'—'}</td>
       <td style="color:#185FA5;font-size:11px;">${r[C.trackId]&&r[C.trackId]!=='NA'?r[C.trackId]:'—'}</td>
       <td>${r[C.dispDate]||'—'}</td>
       <td><span class="bdg ${bc}">${bl}</span></td>
