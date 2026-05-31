@@ -215,6 +215,33 @@ tbody tr.sel td { background: #EFF6FF; }
 </head>
 <body>
 
+<!-- Change Password Modal -->
+<div id="chpwd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:32px 36px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">Change Password</div>
+    <div style="font-size:12px;color:#999;margin-bottom:20px;">Enter your current password and choose a new one.</div>
+    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;display:block;margin-bottom:5px;">Current Password</label><input type="password" id="cp-current" style="width:100%;height:38px;border:1.5px solid #d8d8d8;border-radius:8px;padding:0 12px;font-size:13px;outline:none;" /></div>
+    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;display:block;margin-bottom:5px;">New Password</label><input type="password" id="cp-new" style="width:100%;height:38px;border:1.5px solid #d8d8d8;border-radius:8px;padding:0 12px;font-size:13px;outline:none;" /></div>
+    <div style="margin-bottom:18px;"><label style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;display:block;margin-bottom:5px;">Confirm New Password</label><input type="password" id="cp-confirm" style="width:100%;height:38px;border:1.5px solid #d8d8d8;border-radius:8px;padding:0 12px;font-size:13px;outline:none;" /></div>
+    <div id="cp-error" style="display:none;font-size:12px;color:#C62828;background:#fff0f0;border:1px solid #fecaca;border-radius:7px;padding:8px 12px;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="doChangePwd()" style="flex:1;height:38px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Update Password</button>
+      <button onclick="document.getElementById('chpwd-modal').style.display='none'" style="height:38px;padding:0 16px;background:#f5f6f8;border:1px solid #d8d8d8;border-radius:8px;font-size:13px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Management Modal (Super Admin only) -->
+<div id="users-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:28px 32px;width:100%;max-width:700px;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div style="font-size:16px;font-weight:700;color:#1a1a1a;">User Management</div>
+      <button onclick="document.getElementById('users-modal').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999;">&times;</button>
+    </div>
+    <div id="users-list"></div>
+  </div>
+</div>
+
 <!-- Login Screen -->
 <div id="login-screen">
   <div class="login-card">
@@ -257,6 +284,8 @@ tbody tr.sel td { background: #EFF6FF; }
       <button class="vbtn" id="btn-cust" onclick="setView('customer')">Customer View</button>
     </div>
     <button class="btn btn-blue" onclick="loadData()">&#8635; Refresh</button>
+    <button class="btn" id="btn-chpwd" onclick="showChangePwd()" style="display:none;font-size:11px;">&#128274; Change Password</button>
+    <button class="btn" id="btn-users" onclick="showUserMgmt()" style="display:none;font-size:11px;color:#185FA5;">&#128101; Users</button>
     <button class="btn" id="logout-btn" onclick="doLogout()" style="display:none;color:#C62828;border-color:#fecaca;">&#128275; Logout</button>
   </div>
 </div>
@@ -418,16 +447,84 @@ tbody tr.sel td { background: #EFF6FF; }
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVjmOSsl7LZbn_RBFeF9Cq18rquXLlfiAs4PpeKnJnP1KZzbJ58dxXgS9DmyaAX2g1eUmLyNrEHT18/pub?output=csv';
 
 // ── CUSTOMER LOGIN CONFIG ──────────────────────────────────────────────────────
-// role:'admin' → sees ALL data. role:'customer' → sees only their rows.
-// filterField: key from C object below. filterValue: value to match (case-insensitive).
-// TO ADD A CUSTOMER: copy a block, change username/password/filterValue/label.
+// ── LOGIN SYSTEM ─────────────────────────────────────────────────────────────
+// role:'admin'    → full access, all data
+// role:'customer' → filtered by filters array (ALL conditions must match)
+// filters: array of {field, values[]} — row must match ALL filters (AND), each filter matches ANY value (OR)
+// Password override: stored in localStorage as pwd_USERNAME — takes priority over code password
+// Admin (isSuper:true) can manage all user passwords via Users panel
+
 const CUSTOMERS = {
-  'admin':   { password: 'Admin@2026',  role: 'admin',    label: 'Admin — Full Access' },
-  'zomato':  { password: 'Zomato@123',  role: 'customer', filterField: 'billing', filterValue: 'ZOMATO',  label: 'Zomato'  },
-  'blinkit': { password: 'Blink@456',   role: 'customer', filterField: 'billing', filterValue: 'BLINKIT', label: 'Blinkit' },
-  'blink commerce': { password: 'Blinkc@456',   role: 'customer', filterField: 'billing', filterValue: 'BLINK commerce', label: 'Blink commerce' }
+
+  // ── INTERNAL TEAM — FULL ACCESS ──────────────────────────────────────────
+  'kishor@buroneed.com':        { password: 'Kishor@2026!',   role: 'admin', isSuper: true,  label: 'Kishor — Admin' },
+  'kanthalakshmi@buroneed.com': { password: 'Kantha@2026!',   role: 'admin', isSuper: false, label: 'Kanthalakshmi — Dispatch' },
+  'deepika@buroneed.com':       { password: 'Deepi@2026!',    role: 'admin', isSuper: false, label: 'Deepika — Dispatch' },
+  'zainab@buroneed.com':        { password: 'Zainab@2026!',   role: 'admin', isSuper: false, label: 'Zainab — Dispatch' },
+  'sabiya@buroneed.com':        { password: 'Sabia@2026!',    role: 'admin', isSuper: false, label: 'Sabiya — Dispatch' },
+
+  // ── GROUP ADMIN — ALL 3 COMPANIES, ALL INDIA ─────────────────────────────
+  'harsh@zomato.com': { password: 'Harsh@Grp26!', role: 'customer',
+    filters: [{ field: 'billing', values: ['Zomato Hyperpure Pvt Ltd','Blinkit Foods Limited','Blink Commerce Pvt Ltd'] }],
+    label: 'Group Admin — All Companies' },
+
+  // ── ZOMATO STATE MANAGERS ─────────────────────────────────────────────────
+  'harshal@zomato.com':  { password: 'Hrsh@MH26!',  role: 'customer',
+    filters: [{ field: 'billing', values: ['Zomato Hyperpure Pvt Ltd'] }, { field: 'state', values: ['Maharashtra'] }],
+    label: 'Zomato — Maharashtra' },
+  'ravindra@zomato.com': { password: 'Rvnd@KA26!',  role: 'customer',
+    filters: [{ field: 'billing', values: ['Zomato Hyperpure Pvt Ltd'] }, { field: 'state', values: ['Karnataka'] }],
+    label: 'Zomato — Karnataka' },
+
+  // ── ZOMATO CITY MANAGERS ──────────────────────────────────────────────────
+  'akshay@zomato.com':  { password: 'Aksh@MUM26!', role: 'customer',
+    filters: [{ field: 'billing', values: ['Zomato Hyperpure Pvt Ltd'] }, { field: 'city', values: ['Mumbai'] }],
+    label: 'Zomato — Mumbai' },
+  'nildip@zomato.com':  { password: 'Nldp@AHM26!', role: 'customer',
+    filters: [{ field: 'billing', values: ['Zomato Hyperpure Pvt Ltd'] }, { field: 'city', values: ['Ahmedabad'] }],
+    label: 'Zomato — Ahmedabad' },
+
+  // ── BLINK COMMERCE STATE MANAGERS ────────────────────────────────────────
+  'ravi@zomato.com':      { password: 'Ravi@MH26!',  role: 'customer',
+    filters: [{ field: 'billing', values: ['Blink Commerce Pvt Ltd'] }, { field: 'state', values: ['Maharashtra'] }],
+    label: 'Blink Commerce — Maharashtra' },
+  'sundar@zomato.com':    { password: 'Sndr@KA26!',  role: 'customer',
+    filters: [{ field: 'billing', values: ['Blink Commerce Pvt Ltd'] }, { field: 'state', values: ['Karnataka'] }],
+    label: 'Blink Commerce — Karnataka' },
+  'vignesh@zomato.com':   { password: 'Vgsh@TN26!',  role: 'customer',
+    filters: [{ field: 'billing', values: ['Blink Commerce Pvt Ltd'] }, { field: 'state', values: ['Tamil Nadu'] }],
+    label: 'Blink Commerce — Tamil Nadu' },
+  'venkatesh@zomato.com': { password: 'Vnkt@TG26!',  role: 'customer',
+    filters: [{ field: 'billing', values: ['Blink Commerce Pvt Ltd'] }, { field: 'state', values: ['Telangana'] }],
+    label: 'Blink Commerce — Telangana' },
+
+  // ── BLINK COMMERCE CITY MANAGERS ─────────────────────────────────────────
+  'faisal@zomato.com': { password: 'Fsl@MUM26!', role: 'customer',
+    filters: [{ field: 'billing', values: ['Blink Commerce Pvt Ltd'] }, { field: 'city', values: ['Mumbai'] }],
+    label: 'Blink Commerce — Mumbai' },
+  'kunal@zomato.com':  { password: 'Knl@PUN26!', role: 'customer',
+    filters: [{ field: 'billing', values: ['Blink Commerce Pvt Ltd'] }, { field: 'city', values: ['Pune'] }],
+    label: 'Blink Commerce — Pune' },
+
+  // ── ADD NEW LOGINS BELOW THIS LINE ───────────────────────────────────────
+  // Template — Admin:   'email': { password: 'Pass@2026!', role: 'admin', isSuper: false, label: 'Name' },
+  // Template — Company: 'email': { password: 'Pass@2026!', role: 'customer', filters: [{ field: 'billing', values: ['Company Name'] }], label: 'Company Name' },
+  // Template — State:   'email': { password: 'Pass@2026!', role: 'customer', filters: [{ field: 'billing', values: ['Company'] }, { field: 'state', values: ['State'] }], label: 'Company — State' },
+  // Template — City:    'email': { password: 'Pass@2026!', role: 'customer', filters: [{ field: 'billing', values: ['Company'] }, { field: 'city', values: ['City'] }], label: 'Company — City' },
 
 };
+
+// ── Password helpers ──────────────────────────────────────────────────────────
+function getEffectivePassword(username) {
+  try { const ov = localStorage.getItem('pwd_' + username); if (ov) return ov; } catch(e) {}
+  return CUSTOMERS[username] ? CUSTOMERS[username].password : null;
+}
+function setStoredPassword(username, newPwd) {
+  try { localStorage.setItem('pwd_' + username, newPwd); return true; } catch(e) { return false; }
+}
+function clearStoredPassword(username) {
+  try { localStorage.removeItem('pwd_' + username); return true; } catch(e) { return false; }
+}
 
 const C = {
   sr:'SR NO.', subject:'Mail Subject', recvDate:'Mail received date',
@@ -454,7 +551,7 @@ function checkLogin() {
     const saved = sessionStorage.getItem('dt_session');
     if (saved) {
       const u = JSON.parse(saved);
-      if (CUSTOMERS[u.username] && CUSTOMERS[u.username].password === u.password) {
+      if (CUSTOMERS[u.username] && getEffectivePassword(u.username) === u.password) {
         currentUser = { username: u.username, ...CUSTOMERS[u.username] };
         document.getElementById('login-screen').classList.add('hidden');
         applyLoginUI();
@@ -469,7 +566,7 @@ function doLogin() {
   const username = (document.getElementById('login-user').value || '').trim().toLowerCase();
   const password = document.getElementById('login-pass').value || '';
   const err = document.getElementById('login-error');
-  if (!username || !password || !CUSTOMERS[username] || CUSTOMERS[username].password !== password) {
+  if (!username || !password || !CUSTOMERS[username] || getEffectivePassword(username) !== password) {
     err.classList.add('show');
     document.getElementById('login-pass').value = '';
     document.getElementById('login-pass').focus();
@@ -499,6 +596,8 @@ function doLogout() {
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('user-info').style.display = 'none';
   document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('btn-chpwd').style.display = 'none';
+  const ub = document.getElementById('btn-users'); if(ub) ub.style.display='none';
   document.getElementById('view-toggle').style.display = 'flex';
 }
 
@@ -507,8 +606,12 @@ function applyLoginUI() {
   document.getElementById('user-label').textContent = currentUser ? currentUser.label : '';
   document.getElementById('user-info').style.display = 'flex';
   document.getElementById('logout-btn').style.display = 'flex';
+  document.getElementById('btn-chpwd').style.display = 'flex';
   document.getElementById('view-toggle').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('f-billing').style.display = isAdmin ? '' : 'none';
+  // Show super-admin controls
+  const superBtn = document.getElementById('btn-users');
+  if (superBtn) superBtn.style.display = (currentUser && currentUser.isSuper) ? '' : 'none';
   if (!isAdmin) { document.getElementById('cust-bar').style.display = 'none'; }
 }
 
@@ -687,9 +790,15 @@ function applyFilters() {
         custVal=document.getElementById('cust-val').value.trim().toLowerCase();
 
   filteredData = allData.filter(r => {
-    if (currentUser && currentUser.role === 'customer' && currentUser.filterField) {
-      const cv=(r[C[currentUser.filterField]]||'').toLowerCase(), lv=(currentUser.filterValue||'').toLowerCase();
-      if (!cv.includes(lv)) return false;
+    if (currentUser && currentUser.role === 'customer' && currentUser.filters) {
+      for (const f of currentUser.filters) {
+        const fieldMap = { billing: C.billing, state: C.state, city: C.city };
+        const colKey = fieldMap[f.field];
+        if (!colKey) continue;
+        const cellVal = (r[colKey] || '').toLowerCase().trim();
+        const match = f.values.some(v => cellVal === v.toLowerCase().trim());
+        if (!match) return false;
+      }
     }
     if (billing && r[C.billing] !== billing) return false;
     if (state   && r[C.state]   !== state)   return false;
@@ -744,7 +853,7 @@ function updateAlerts(data) {
     { id:'challan',   test: r => !r[C.challan]||r[C.challan].trim()==='' },
     { id:'challanup', test: r => !isLink(r[C.challanLk]) },
     { id:'pod',       test: r => !isLink(r[C.podLink]) },
-    { id:'track',     test: r => !r[C.trackId]||r[C.trackId].trim()===''||r[C.trackId].trim()==='NA' },
+    { id:'track',     test: r => { const t=(r[C.trackId]||'').trim().toUpperCase(); return !t||t===''||t==='0'; } },
     { id:'address',   test: r => !r[C.address]||r[C.address].trim()==='' },
     { id:'dispdate',  test: r => !r[C.dispDate]||r[C.dispDate].trim()==='' },
     { id:'status',    test: r => !normStatus(r[C.status]) },
@@ -952,7 +1061,7 @@ function renderTable(data) {
       </td>
       <td><div>${r[C.state]||'—'}</div><div style="font-size:11px;color:#999;">${r[C.city]||'—'}</div></td>
       <td>${r[C.category]||'—'}</td><td style="font-size:11px;">${r[C.month]||'—'}</td><td>${r[C.dispMode]||'—'}</td>
-      <td style="color:#185FA5;font-size:11px;">${r[C.trackId]&&r[C.trackId]!=='NA'?r[C.trackId]:'—'}</td>
+      <td style="font-size:11px;">${(()=>{const t=(r[C.trackId]||'').trim().toUpperCase();if(!r[C.trackId]||!t)return'—';if(t==='HAND DELIVERY'||t==='NA'||t==='N/A')return'<span style="background:#f0fdf4;color:#15803d;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;border:1px solid #bbf7d0;">Hand Delivery</span>';return'<span style="color:#185FA5;">'+r[C.trackId]+'</span>';})()}</td>
       <td>${r[C.dispDate]||'—'}</td>
       <td><span class="bdg ${bc}">${bl}</span></td>
       <td>${r[C.delivDate]||'—'}</td>
@@ -1052,10 +1161,79 @@ function markWASent(key, el) {
   }, 300);
 }
 
+// ── Change Password ───────────────────────────────────────────────────────────
+function showChangePwd() {
+  ['cp-current','cp-new','cp-confirm'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('cp-error').style.display='none';
+  const m = document.getElementById('chpwd-modal');
+  m.style.display='flex';
+}
+function doChangePwd() {
+  const cur = document.getElementById('cp-current').value;
+  const nw  = document.getElementById('cp-new').value;
+  const con = document.getElementById('cp-confirm').value;
+  const err = id => { const el=document.getElementById('cp-error'); el.textContent=id; el.style.display='block'; };
+  if (!cur || !nw || !con) return err('All fields are required.');
+  if (getEffectivePassword(currentUser.username) !== cur) return err('Current password is incorrect.');
+  if (nw.length < 8) return err('New password must be at least 8 characters.');
+  if (nw !== con) return err('New passwords do not match.');
+  if (setStoredPassword(currentUser.username, nw)) {
+    document.getElementById('chpwd-modal').style.display='none';
+    alert('Password changed successfully!');
+  } else {
+    err('Could not save password. Please try again.');
+  }
+}
+
+// ── User Management (Super Admin) ─────────────────────────────────────────────
+function showUserMgmt() {
+  const list = document.getElementById('users-list');
+  const rows = Object.entries(CUSTOMERS).map(([uname, u]) => {
+    const hasOverride = (() => { try { return !!localStorage.getItem('pwd_' + uname); } catch(e) { return false; } })();
+    const roleLabel = u.role === 'admin' ? (u.isSuper ? '⭐ Super Admin' : '🔧 Admin') :
+      (u.filters ? u.filters.map(f=>f.values.join('/')).join(' + ') : 'Customer');
+    return `<tr style="border-bottom:1px solid #f0f0f0;">
+      <td style="padding:10px 8px;font-size:12px;font-weight:600;color:#1a1a1a;">${uname}</td>
+      <td style="padding:10px 8px;font-size:11px;color:#666;">${u.label}</td>
+      <td style="padding:10px 8px;font-size:11px;color:#888;">${roleLabel}</td>
+      <td style="padding:10px 8px;">
+        ${hasOverride ? '<span style="font-size:10px;background:#fff3e0;color:#E65100;padding:2px 7px;border-radius:20px;border:1px solid #ffcc80;">Custom pwd</span>' : '<span style="font-size:10px;color:#aaa;">Default</span>'}
+      </td>
+      <td style="padding:10px 8px;">
+        <button onclick="adminResetPwd('${uname}')" style="height:28px;padding:0 10px;font-size:11px;background:#fff0f0;border:1px solid #fecaca;color:#C62828;border-radius:6px;cursor:pointer;">Reset to Default</button>
+        <button onclick="adminSetPwd('${uname}')" style="height:28px;padding:0 10px;font-size:11px;background:#EFF6FF;border:1px solid #BFDBFE;color:#185FA5;border-radius:6px;cursor:pointer;margin-left:4px;">Set New Pwd</button>
+      </td>
+    </tr>`;
+  }).join('');
+  list.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="background:#f8f9fa;">
+      <th style="padding:8px;font-size:11px;color:#777;text-align:left;">Username</th>
+      <th style="padding:8px;font-size:11px;color:#777;text-align:left;">Label</th>
+      <th style="padding:8px;font-size:11px;color:#777;text-align:left;">Access</th>
+      <th style="padding:8px;font-size:11px;color:#777;text-align:left;">Password</th>
+      <th style="padding:8px;font-size:11px;color:#777;text-align:left;">Actions</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('users-modal').style.display='flex';
+}
+function adminResetPwd(uname) {
+  if (!confirm(`Reset password for ${uname} to default?`)) return;
+  clearStoredPassword(uname);
+  showUserMgmt(); // refresh
+  alert(`Password reset to default for ${uname}`);
+}
+function adminSetPwd(uname) {
+  const newPwd = prompt(`Set new password for ${uname}:`);
+  if (!newPwd) return;
+  if (newPwd.length < 8) { alert('Password must be at least 8 characters.'); return; }
+  setStoredPassword(uname, newPwd);
+  showUserMgmt();
+  alert(`Password updated for ${uname}`);
+}
+
 function buildWA(r) {
   const s = normStatus(r[C.status]);
   const statusLine = s==='DELIVERED' ? `✅ *Delivered* on ${r[C.delivDate]||'—'}` :
-                     s.includes('TRANSIT') ? `🚚 *In Transit*\nTracking ID: ${r[C.trackId]||'—'}\nVia: ${r[C.dispMode]||'—'}` :
+                     s.includes('TRANSIT') ? `🚚 *In Transit*\nTracking ID: ${(r[C.trackId]||'').toUpperCase()==='HAND DELIVERY'?'Hand Delivery':r[C.trackId]||'—'}\nVia: ${r[C.dispMode]||'—'}` :
                      s==='DELAYED' ? `⚠️ *Delayed*\nTracking ID: ${r[C.trackId]||'—'}` :
                      s.includes('RETURN') ? `↩️ *Returned / Cancelled*` :
                      `📦 Status: ${r[C.status]||'Pending Dispatch'}`;
