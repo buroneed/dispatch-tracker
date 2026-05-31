@@ -312,7 +312,7 @@ tbody tr.sel td { background: #EFF6FF; }
 </div>
 
 <!-- Data Quality Alert Section -->
-<div class="alert-section" id="alert-section">
+<div class="alert-section" id="alert-section" style="display:none;">
   <div class="alert-section-title">&#9888; Data Quality Alerts — Pending Updates (click any card to filter)</div>
   <div class="alert-grid">
     <div class="alert-card" id="alrt-challan" onclick="filterAlert('challan')">
@@ -612,6 +612,8 @@ function applyLoginUI() {
   // Show super-admin controls
   const superBtn = document.getElementById('btn-users');
   if (superBtn) superBtn.style.display = (currentUser && currentUser.isSuper) ? '' : 'none';
+  // Always hide alert section for non-admin users on login
+  if (!isAdmin) document.getElementById('alert-section').style.display = 'none';
   if (!isAdmin) { document.getElementById('cust-bar').style.display = 'none'; }
 }
 
