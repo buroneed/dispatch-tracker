@@ -613,7 +613,8 @@ function applyLoginUI() {
   const superBtn = document.getElementById('btn-users');
   if (superBtn) superBtn.style.display = (currentUser && currentUser.isSuper) ? '' : 'none';
   // Always hide alert section for non-admin users on login
-  if (!isAdmin) document.getElementById('alert-section').style.display = 'none';
+  const alertSec = document.getElementById('alert-section');
+  if (!isAdmin) { alertSec.style.display='none'; alertSec.style.visibility='hidden'; }
   if (!isAdmin) { document.getElementById('cust-bar').style.display = 'none'; }
 }
 
@@ -714,6 +715,11 @@ async function loadData() {
       status:  document.getElementById('f-status').value,
       subject: document.getElementById('f-subject').value,
     };
+    // Immediately hide alert section for non-admin users
+    if (!isAdminUser()) {
+      document.getElementById('alert-section').style.display='none';
+      document.getElementById('alert-section').style.visibility='hidden';
+    }
     populateFilters();
     // Restore previous selections only if value still exists in new data
     Object.entries(prevSelections).forEach(([key, val]) => {
@@ -848,9 +854,14 @@ function updateKPIs(data) {
 }
 
 let _alertFilter = null;
+function isAdminUser() {
+  return currentUser && currentUser.role === 'admin';
+}
 function updateAlerts(data) {
-  if (!data.length || !currentUser || currentUser.role !== 'admin') { document.getElementById('alert-section').style.display='none'; return; }
-  document.getElementById('alert-section').style.display='block';
+  const sec = document.getElementById('alert-section');
+  if (!isAdminUser()) { sec.style.display='none'; sec.style.visibility='hidden'; return; }
+  if (!data.length) { sec.style.display='none'; return; }
+  sec.style.display='block'; sec.style.visibility='visible';
   const checks = [
     { id:'challan',   test: r => !r[C.challan]||r[C.challan].trim()==='' },
     { id:'challanup', test: r => !isLink(r[C.challanLk]) },
