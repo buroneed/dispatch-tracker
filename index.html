@@ -601,21 +601,70 @@ function doLogout() {
   document.getElementById('view-toggle').style.display = 'flex';
 }
 
+function getLoginType() {
+  // Returns: 'admin' | 'group' | 'company' | 'state' | 'city'
+  if (!currentUser || currentUser.role === 'admin') return 'admin';
+  const filters = currentUser.filters || [];
+  const hasState  = filters.some(f => f.field === 'state');
+  const hasCity   = filters.some(f => f.field === 'city');
+  const billing   = filters.find(f => f.field === 'billing');
+  const multiCo   = billing && billing.values.length > 1;
+  if (hasCity)   return 'city';
+  if (hasState)  return 'state';
+  if (multiCo)   return 'group';
+  return 'company';
+}
+
 function applyLoginUI() {
-  const isAdmin = currentUser && currentUser.role === 'admin';
+  const isAdmin   = currentUser && currentUser.role === 'admin';
+  const loginType = getLoginType();
   document.getElementById('user-label').textContent = currentUser ? currentUser.label : '';
   document.getElementById('user-info').style.display = 'flex';
   document.getElementById('logout-btn').style.display = 'flex';
   document.getElementById('btn-chpwd').style.display = 'flex';
   document.getElementById('view-toggle').style.display = isAdmin ? 'flex' : 'none';
-  document.getElementById('f-billing').style.display = isAdmin ? '' : 'none';
-  // Show super-admin controls
+
+  // Super-admin controls
   const superBtn = document.getElementById('btn-users');
   if (superBtn) superBtn.style.display = (currentUser && currentUser.isSuper) ? '' : 'none';
-  // Always hide alert section for non-admin users on login
+
+  // Alert section — admin only
   const alertSec = document.getElementById('alert-section');
   if (!isAdmin) { alertSec.style.display='none'; alertSec.style.visibility='hidden'; }
   if (!isAdmin) { document.getElementById('cust-bar').style.display = 'none'; }
+
+  // ── Smart filter bar visibility per role ─────────────────────────────────
+  // Determine which SDR dropdowns to show/hide
+  const show = id => { const el=document.getElementById(id); if(el){ el.style.display=''; el.style.visibility='visible'; } };
+  const hide  = id => { const el=document.getElementById(id); if(el){ el.style.display='none'; } };
+
+  if (isAdmin) {
+    // Admin sees everything
+    show('sdr-billing'); show('sdr-state'); show('sdr-city');
+    show('sdr-month'); show('sdr-cat'); show('sdr-status'); show('sdr-subject');
+    document.getElementById('f-billing').style.display = '';
+  } else if (loginType === 'group') {
+    // Group admin — multiple companies, all India: show billing + state + city
+    show('sdr-billing'); show('sdr-state'); show('sdr-city');
+    show('sdr-month'); show('sdr-cat'); show('sdr-status'); show('sdr-subject');
+    document.getElementById('f-billing').style.display = 'none';
+  } else if (loginType === 'state') {
+    // State manager — locked to 1 company + 1 state: show city only
+    hide('sdr-billing'); hide('sdr-state');
+    show('sdr-city'); show('sdr-month'); show('sdr-cat'); show('sdr-status'); show('sdr-subject');
+    document.getElementById('f-billing').style.display = 'none';
+  } else if (loginType === 'city') {
+    // City manager — locked to 1 company + 1 city: hide all location filters
+    hide('sdr-billing'); hide('sdr-state'); hide('sdr-city');
+    show('sdr-month'); show('sdr-cat'); show('sdr-status'); show('sdr-subject');
+    document.getElementById('f-billing').style.display = 'none';
+  } else {
+    // Company only — locked to 1 company, all India: show state + city
+    hide('sdr-billing');
+    show('sdr-state'); show('sdr-city');
+    show('sdr-month'); show('sdr-cat'); show('sdr-status'); show('sdr-subject');
+    document.getElementById('f-billing').style.display = 'none';
+  }
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
