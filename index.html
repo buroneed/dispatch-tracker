@@ -847,7 +847,7 @@ function updateKPIs(data) {
 
 let _alertFilter = null;
 function updateAlerts(data) {
-  if (!data.length) { document.getElementById('alert-section').style.display='none'; return; }
+  if (!data.length || !currentUser || currentUser.role !== 'admin') { document.getElementById('alert-section').style.display='none'; return; }
   document.getElementById('alert-section').style.display='block';
   const checks = [
     { id:'challan',   test: r => !r[C.challan]||r[C.challan].trim()==='' },
