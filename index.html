@@ -936,8 +936,7 @@ function updateKPIs(data) {
 
 function updateDocCompletion(data) {
   const wrap = document.getElementById('doc-completion-wrap');
-  if (!data.length) { wrap.style.display='none'; return; }
-  wrap.style.display='block'; wrap.style.visibility='visible';
+  if (!wrap || !data.length) return;
   const n = data.length;
   const challanUp = data.filter(r => isLink(r[C.challanLk])).length;
   const podUp     = data.filter(r => isLink(r[C.podLink])).length;
@@ -1054,6 +1053,8 @@ const COLORS14 = ['#185FA5','#2d7d32','#E65100','#6a1b9a','#00838f','#c62828','#
 function updateCharts(data) {
   if (!data.length) { document.getElementById('charts-section').style.display='none'; return; }
   document.getElementById('charts-section').style.display='grid';
+  const dcw = document.getElementById('doc-completion-wrap');
+  if (dcw) { dcw.style.display='block'; dcw.style.visibility='visible'; }
 
   // Status donut
   const del=data.filter(r=>matchStatus(r[C.status],'DELIVERED')).length,
