@@ -314,23 +314,17 @@ tbody tr.sel td { background: #EFF6FF; }
   <div class="kpi kpi-clickable" onclick="filterByKPI('BLANK')" title="Filter: Blank / No Status"><div class="kpi-lbl">Blank / No Status</div><div class="kpi-val" style="color:#bbb;" id="k-blank">—</div><div class="kpi-meta">click to filter</div></div>
 </div>
 
-<!-- Document Completion Card -->
-<div id="doc-completion-wrap" style="padding:12px 20px 0; display:none;">
-  <div class="doc-completion" style="max-width:320px;">
+<!-- Charts Section -->
+<div id="charts-section" style="display:none; padding:12px 20px 0; gap:10px; grid-template-columns:repeat(3,1fr); align-items:start;">
+  <div class="doc-completion" id="doc-completion-wrap" style="display:none;">
     <div class="doc-completion-title">Document Completion</div>
     <div class="doc-row">
-      <div class="doc-row-top">
-        <span class="doc-row-label">Challan Upload</span>
-        <span class="doc-row-pct" id="dc-challan-pct">0%</span>
-      </div>
+      <div class="doc-row-top"><span class="doc-row-label">Challan Upload</span><span class="doc-row-pct" id="dc-challan-pct">0%</span></div>
       <div class="doc-progress"><div class="doc-progress-bar" id="dc-challan-bar" style="width:0%;background:#185FA5;"></div></div>
       <div class="doc-sub" id="dc-challan-sub">—</div>
     </div>
     <div class="doc-row">
-      <div class="doc-row-top">
-        <span class="doc-row-label">POD Upload</span>
-        <span class="doc-row-pct" id="dc-pod-pct">0%</span>
-      </div>
+      <div class="doc-row-top"><span class="doc-row-label">POD Upload</span><span class="doc-row-pct" id="dc-pod-pct">0%</span></div>
       <div class="doc-progress"><div class="doc-progress-bar" id="dc-pod-bar" style="width:0%;background:#2d7d32;"></div></div>
       <div class="doc-sub" id="dc-pod-sub">—</div>
     </div>
@@ -339,10 +333,6 @@ tbody tr.sel td { background: #EFF6FF; }
       <div class="delivery-rate-lbl">Overall Delivery Rate</div>
     </div>
   </div>
-</div>
-
-<!-- Charts Section -->
-<div id="charts-section" style="display:none; padding:12px 20px 0; gap:10px; grid-template-columns:repeat(3,1fr); align-items:start;">
   <div class="chart-card"><div class="chart-title">Status Distribution</div><canvas id="chart-status"></canvas></div>
   <div class="chart-card"><div class="chart-title">Orders by Customer</div><canvas id="chart-customer"></canvas></div>
   <div class="chart-card"><div class="chart-title">Orders by Category</div><canvas id="chart-category"></canvas></div>
@@ -631,7 +621,7 @@ function doLogout() {
   ['k-total','k-del','k-transit','k-pending','k-delayed','k-return','k-blank'].forEach(id => document.getElementById(id).textContent = '—');
   document.getElementById('charts-section').style.display='none';
   document.getElementById('alert-section').style.display='none';
-  document.getElementById('doc-completion-wrap').style.display='none';
+  const dcw=document.getElementById('doc-completion-wrap'); if(dcw) dcw.style.display='none';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
   document.getElementById('login-screen').classList.remove('hidden');
@@ -947,7 +937,7 @@ function updateKPIs(data) {
 function updateDocCompletion(data) {
   const wrap = document.getElementById('doc-completion-wrap');
   if (!data.length) { wrap.style.display='none'; return; }
-  wrap.style.display='block';
+  wrap.style.display='block'; wrap.style.visibility='visible';
   const n = data.length;
   const challanUp = data.filter(r => isLink(r[C.challanLk])).length;
   const podUp     = data.filter(r => isLink(r[C.podLink])).length;
