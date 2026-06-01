@@ -1101,7 +1101,7 @@ function renderTable(data) {
     const [bc,bl]=statusBadge(r[C.status]), hasCh=isLink(r[C.challanLk]), hasPOD=isLink(r[C.podLink]);
     const waKey = 'wa_sent_' + (r[C.sr]||r[C.challan]||idx);
     let waSentRaw; try { waSentRaw = localStorage.getItem(waKey); } catch(e) { waSentRaw = null; }
-    const waBtn = r[C.pocPhone]
+    const waBtn = (isAdminUser() && r[C.pocPhone])
       ? (waSentRaw
           ? `<span class="wa-sent" title="Sent on ${waSentRaw}">&#10003; WA ${waSentRaw}</span>`
           : `<a class="wa-btn" href="${buildWA(r)}" target="_blank" onclick="markWASent('${waKey}',this);event.stopPropagation();">&#128232; WA</a>`)
@@ -1207,7 +1207,7 @@ function showDetail(r) {
         ${hasCh?`<a href="${r[C.challanLk]}" target="_blank" class="btn">&#128196; Download Challan</a>`:`<button class="btn" disabled style="opacity:0.4;cursor:not-allowed;">&#128196; Challan (not uploaded)</button>`}
         ${hasPOD?`<a href="${r[C.podLink]}" target="_blank" class="btn">&#128247; Download POD</a>`:`<button class="btn" disabled style="opacity:0.4;cursor:not-allowed;">&#128247; POD (not uploaded)</button>`}
         ${r[C.trackId]&&r[C.trackId]!=='NA'?`<button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${r[C.trackId]}').then(()=>{this.textContent='Copied ✓';setTimeout(()=>this.textContent='&#128203; Copy Tracking ID',1500)}).catch(()=>{})">&#128203; Copy Tracking ID</button>`:''}
-        ${r[C.pocPhone]?`<a href="${buildWA(r)}" target="_blank" class="btn btn-green">&#128232; WhatsApp Update</a>`:''}
+        ${(isAdminUser()&&r[C.pocPhone])?`<a href="${buildWA(r)}" target="_blank" class="btn btn-green">&#128232; WhatsApp Update</a>`:''}
       </div>
     </div>`;
   document.getElementById('det-panel').classList.add('open');
