@@ -1093,7 +1093,7 @@ function renderTable(data) {
     <th style="${s}" onclick="toggleSort('status')">Status${arrow('status','text')}</th>
     <th style="${s}" onclick="toggleSort('deliv')">Delivery Date${arrow('deliv','date')}</th>
     <th style="${s}" onclick="toggleSort('parcelQty')">Parcel Qty${arrow('parcelQty','num')}</th>
-    <th>Docs &amp; WhatsApp</th>
+    <th>${isAdminUser() ? 'Docs &amp; WhatsApp' : 'Docs'}</th>
     <th style="${s}" onclick="toggleSort('weight')">Weight (kg)${arrow('weight','num')}</th>
     <th style="${s}" onclick="toggleSort('remarks')">Remarks${arrow('remarks','text')}</th>
   </tr></thead><tbody>`;
