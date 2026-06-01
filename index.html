@@ -36,6 +36,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .c-blue { color: #185FA5; } .c-green { color: #2d7d32; } .c-indigo { color: #3949AB; }
 .c-gray { color: #757575; } .c-orange { color: #E65100; } .c-red { color: #C62828; }
 .chart-card { background:#fff; border:1px solid #e8e8e8; border-radius:10px; padding:12px 14px; }
+.doc-completion { background:#fff; border:1px solid #e8e8e8; border-radius:10px; padding:14px 16px; }
+.doc-completion-title { font-size:10px; font-weight:700; color:#777; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px; }
+.doc-row { margin-bottom:10px; }
+.doc-row-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.doc-row-label { font-size:12px; font-weight:500; color:#444; }
+.doc-row-pct { font-size:12px; font-weight:700; color:#185FA5; }
+.doc-progress { height:7px; background:#f0f0f0; border-radius:20px; overflow:hidden; }
+.doc-progress-bar { height:100%; border-radius:20px; transition:width 0.6s ease; }
+.doc-sub { font-size:10px; color:#aaa; margin-top:3px; }
+.delivery-rate-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; text-align:center; margin-top:12px; }
+.delivery-rate-val { font-size:32px; font-weight:700; color:#15803d; line-height:1; }
+.delivery-rate-lbl { font-size:11px; color:#16a34a; margin-top:3px; }
 .alert-section { margin:12px 20px 0; display:none; }
 .alert-section-title { font-size:12px; font-weight:700; color:#C62828; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
 .alert-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
@@ -185,6 +197,7 @@ tbody tr.sel td { background: #EFF6FF; }
   .btn { height: 30px; padding: 0 11px; font-size: 11px; }
   .kpi-wrap { grid-template-columns: repeat(4, 1fr); padding: 10px 14px 0; gap: 7px; }
   #charts-section { grid-template-columns: 1fr !important; }
+  #doc-completion-wrap .doc-completion { max-width:100% !important; }
   .alert-grid { grid-template-columns: repeat(2,1fr) !important; }
   .kpi { padding: 9px 10px; }
   .kpi-val { font-size: 20px; }
@@ -299,6 +312,33 @@ tbody tr.sel td { background: #EFF6FF; }
   <div class="kpi kpi-clickable" onclick="filterByKPI('DELAYED')" title="Filter: Delayed"><div class="kpi-lbl">Delayed</div><div class="kpi-val c-orange" id="k-delayed">—</div><div class="kpi-meta">click to filter</div></div>
   <div class="kpi kpi-clickable" onclick="filterByKPI('RETURN')" title="Filter: Returned"><div class="kpi-lbl">Returned / Cancelled</div><div class="kpi-val c-red" id="k-return">—</div><div class="kpi-meta">click to filter</div></div>
   <div class="kpi kpi-clickable" onclick="filterByKPI('BLANK')" title="Filter: Blank / No Status"><div class="kpi-lbl">Blank / No Status</div><div class="kpi-val" style="color:#bbb;" id="k-blank">—</div><div class="kpi-meta">click to filter</div></div>
+</div>
+
+<!-- Document Completion Card -->
+<div id="doc-completion-wrap" style="padding:12px 20px 0; display:none;">
+  <div class="doc-completion" style="max-width:320px;">
+    <div class="doc-completion-title">Document Completion</div>
+    <div class="doc-row">
+      <div class="doc-row-top">
+        <span class="doc-row-label">Challan Upload</span>
+        <span class="doc-row-pct" id="dc-challan-pct">0%</span>
+      </div>
+      <div class="doc-progress"><div class="doc-progress-bar" id="dc-challan-bar" style="width:0%;background:#185FA5;"></div></div>
+      <div class="doc-sub" id="dc-challan-sub">—</div>
+    </div>
+    <div class="doc-row">
+      <div class="doc-row-top">
+        <span class="doc-row-label">POD Upload</span>
+        <span class="doc-row-pct" id="dc-pod-pct">0%</span>
+      </div>
+      <div class="doc-progress"><div class="doc-progress-bar" id="dc-pod-bar" style="width:0%;background:#2d7d32;"></div></div>
+      <div class="doc-sub" id="dc-pod-sub">—</div>
+    </div>
+    <div class="delivery-rate-box">
+      <div class="delivery-rate-val" id="dc-del-rate">—</div>
+      <div class="delivery-rate-lbl">Overall Delivery Rate</div>
+    </div>
+  </div>
 </div>
 
 <!-- Charts Section -->
@@ -591,6 +631,7 @@ function doLogout() {
   ['k-total','k-del','k-transit','k-pending','k-delayed','k-return','k-blank'].forEach(id => document.getElementById(id).textContent = '—');
   document.getElementById('charts-section').style.display='none';
   document.getElementById('alert-section').style.display='none';
+  document.getElementById('doc-completion-wrap').style.display='none';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
   document.getElementById('login-screen').classList.remove('hidden');
@@ -898,8 +939,35 @@ function updateKPIs(data) {
   document.getElementById('k-blank').textContent=blank;
   document.getElementById('k-total-sub').textContent = view==='admin' ? 'all locations' : 'your locations';
   document.getElementById('k-del-sub').textContent = n ? Math.round(del/n*100)+'% delivery rate' : '—';
+  updateDocCompletion(data);
   updateAlerts(data);
   updateCharts(data);
+}
+
+function updateDocCompletion(data) {
+  const wrap = document.getElementById('doc-completion-wrap');
+  if (!data.length) { wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const n = data.length;
+  const challanUp = data.filter(r => isLink(r[C.challanLk])).length;
+  const podUp     = data.filter(r => isLink(r[C.podLink])).length;
+  const delivered = data.filter(r => matchStatus(r[C.status],'DELIVERED')).length;
+  const challanPct = n ? Math.round(challanUp/n*100) : 0;
+  const podPct     = n ? Math.round(podUp/n*100) : 0;
+  const delPct     = n ? Math.round(delivered/n*100) : 0;
+
+  document.getElementById('dc-challan-pct').textContent = challanPct + '%';
+  document.getElementById('dc-challan-bar').style.width = challanPct + '%';
+  document.getElementById('dc-challan-sub').textContent = challanUp + ' of ' + n + ' orders uploaded';
+  document.getElementById('dc-pod-pct').textContent = podPct + '%';
+  document.getElementById('dc-pod-bar').style.width = podPct + '%';
+  document.getElementById('dc-pod-sub').textContent = podUp + ' of ' + n + ' orders uploaded';
+  document.getElementById('dc-del-rate').textContent = delPct + '%';
+
+  // Color challan bar red if low
+  document.getElementById('dc-challan-bar').style.background = challanPct < 50 ? '#C62828' : challanPct < 80 ? '#E65100' : '#185FA5';
+  document.getElementById('dc-pod-bar').style.background = podPct < 50 ? '#C62828' : podPct < 80 ? '#E65100' : '#2d7d32';
+  document.getElementById('dc-del-rate').style.color = delPct >= 90 ? '#15803d' : delPct >= 70 ? '#E65100' : '#C62828';
 }
 
 let _alertFilter = null;
