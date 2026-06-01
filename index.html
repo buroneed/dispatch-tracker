@@ -196,7 +196,7 @@ tbody tr.sel td { background: #EFF6FF; }
   .view-toggle .vbtn { padding: 5px 9px; font-size: 11px; }
   .btn { height: 30px; padding: 0 11px; font-size: 11px; }
   .kpi-wrap { grid-template-columns: repeat(4, 1fr); padding: 10px 14px 0; gap: 7px; }
-  #charts-section { grid-template-columns: 1fr !important; }
+  #charts-section { grid-template-columns: repeat(2,1fr) !important; }
   #doc-completion-wrap .doc-completion { max-width:100% !important; }
   .alert-grid { grid-template-columns: repeat(2,1fr) !important; }
   .kpi { padding: 9px 10px; }
@@ -315,7 +315,7 @@ tbody tr.sel td { background: #EFF6FF; }
 </div>
 
 <!-- Charts Section -->
-<div id="charts-section" style="display:none; padding:12px 20px 0; gap:10px; grid-template-columns:repeat(3,1fr); align-items:start;">
+<div id="charts-section" style="display:none; padding:12px 20px 0; gap:10px; grid-template-columns:repeat(4,1fr); align-items:start;">
   <div class="doc-completion" id="doc-completion-wrap" style="display:none;">
     <div class="doc-completion-title">Document Completion</div>
     <div class="doc-row">
@@ -338,7 +338,7 @@ tbody tr.sel td { background: #EFF6FF; }
   <div class="chart-card"><div class="chart-title">Orders by Category</div><canvas id="chart-category"></canvas></div>
   <div class="chart-card"><div class="chart-title">Top 8 States</div><canvas id="chart-state"></canvas></div>
   <div class="chart-card"><div class="chart-title">Top 8 Cities</div><canvas id="chart-city"></canvas></div>
-  <div class="chart-card"><div class="chart-title">Dispatch Mode</div><canvas id="chart-dispmode"></canvas></div>
+  <div class="chart-card" style="grid-column:span 2;"><div class="chart-title">Dispatch Mode</div><canvas id="chart-dispmode"></canvas></div>
 </div>
 
 <!-- Data Quality Alert Section -->
